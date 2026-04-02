@@ -1,0 +1,19 @@
+fastapi==0.135.3
+uvicorn[standard]==0.42.0
+sqlalchemy==2.0.48
+psycopg2-binary==2.9.11
+alembic==1.18.4
+python-dotenv==1.2.2
+pydantic-settings==2.13.1
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.5.0
+cryptography==46.0.6
+slowapi==0.1.9
+redis==7.4.0
+httpx==0.28.1
+fhir.resources==8.2.0
+
+# Dev / security tooling
+bandit==1.9.4
+pip-audit==2.10.0
+pytest==9.0.2
