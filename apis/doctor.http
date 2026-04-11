@@ -1,0 +1,32 @@
+@base = http://localhost:8000/api/v1
+
+# Doctor JWT — obtained by logging in as a DOCTOR role user
+@doctorToken = PASTE_DOCTOR_TOKEN_HERE
+
+# Sharing token — obtained from /sharing/initiate or /sharing/approve response
+# This token proves the patient consented to this doctor's access
+@sharingToken = PASTE_SHARING_TOKEN_HERE
+
+# All doctor endpoints require BOTH headers:
+#   Authorization: Bearer <doctorToken>
+#   X-Sharing-Token: <sharingToken>
+
+### View patient profile
+GET {{base}}/doctor/patient
+Authorization: Bearer {{doctorToken}}
+X-Sharing-Token: {{sharingToken}}
+
+### View patient's medical records (read-only)
+GET {{base}}/doctor/records
+Authorization: Bearer {{doctorToken}}
+X-Sharing-Token: {{sharingToken}}
+
+### View patient's active medications
+GET {{base}}/doctor/medications
+Authorization: Bearer {{doctorToken}}
+X-Sharing-Token: {{sharingToken}}
+
+### End the session explicitly
+POST {{base}}/doctor/session/end
+Authorization: Bearer {{doctorToken}}
+X-Sharing-Token: {{sharingToken}}

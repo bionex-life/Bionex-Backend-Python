@@ -1,0 +1,76 @@
+@base = http://localhost:8000/api/v1
+
+### ── PATIENT tokens ────────────────────────────────────────────────────────
+@patientToken = PASTE_PATIENT_TOKEN_HERE
+@doctorUserId = PASTE_DOCTOR_USER_ID_HERE
+@memberId = PASTE_FAMILY_MEMBER_ID_HERE
+@permId = PASTE_PERMISSION_ID_HERE
+
+### ── DOCTOR tokens ─────────────────────────────────────────────────────────
+@doctorToken = PASTE_DOCTOR_TOKEN_HERE
+@patientUserId = PASTE_PATIENT_USER_ID_HERE
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  PATIENT-INITIATED FLOW  (Patient taps NFC/BT → grants doctor access)
+# ═════════════════════════════════════════════════════════════════════════════
+
+### Step 1 — Patient initiates sharing with a doctor
+# @name initiateSharing
+POST {{base}}/sharing/initiate
+Authorization: Bearer {{patientToken}}
+Content-Type: application/json
+
+{
+  "doctor_user_id": "{{doctorUserId}}",
+  "scope": "records,medications"
+}
+
+### Step 1b — Patient shares records of a specific family member
+POST {{base}}/sharing/initiate
+Authorization: Bearer {{patientToken}}
+Content-Type: application/json
+
+{
+  "doctor_user_id": "{{doctorUserId}}",
+  "family_member_id": "{{memberId}}",
+  "scope": "records"
+}
+
+### Step 2 — Patient revokes an active session
+POST {{base}}/sharing/revoke/{{permId}}
+Authorization: Bearer {{patientToken}}
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  DOCTOR-INITIATED FLOW  (Doctor requests access → Patient approves/rejects)
+# ═════════════════════════════════════════════════════════════════════════════
+
+### Step 1 — Doctor requests access (after scanning patient NFC/QR)
+# @name doctorRequest
+POST {{base}}/sharing/request
+Authorization: Bearer {{doctorToken}}
+Content-Type: application/json
+
+{
+  "patient_user_id": "{{patientUserId}}",
+  "scope": "records"
+}
+
+### Step 2a — Patient approves the request
+POST {{base}}/sharing/approve/{{permId}}
+Authorization: Bearer {{patientToken}}
+
+### Step 2b — Patient rejects the request
+POST {{base}}/sharing/reject/{{permId}}
+Authorization: Bearer {{patientToken}}
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  QUERY  
+# ═════════════════════════════════════════════════════════════════════════════
+
+### Patient: view all active (approved) sharing sessions
+GET {{base}}/sharing/sessions
+Authorization: Bearer {{patientToken}}
+
+### Patient: view all pending doctor access requests
+GET {{base}}/sharing/requests
+Authorization: Bearer {{patientToken}}

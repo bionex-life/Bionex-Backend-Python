@@ -1,0 +1,73 @@
+@base = http://localhost:8000/api/v1
+@token = PASTE_PATIENT_TOKEN_HERE
+@medId = PASTE_MEDICATION_ID_HERE
+@memberId = PASTE_FAMILY_MEMBER_ID_HERE
+
+### List all medications (active + inactive)
+GET {{base}}/medications
+Authorization: Bearer {{token}}
+
+### List active medications only
+GET {{base}}/medications?is_active=true
+Authorization: Bearer {{token}}
+
+### List medications for a family member
+GET {{base}}/medications?family_member_id={{memberId}}
+Authorization: Bearer {{token}}
+
+### Add a medication
+# @name addMedication
+POST {{base}}/medications
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Metformin",
+  "dosage": "500mg",
+  "frequency": "Twice daily",
+  "instructions": "Take with meals",
+  "start_date": "2026-04-03"
+}
+
+### Add a medication for a family member
+POST {{base}}/medications
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Amlodipine",
+  "dosage": "5mg",
+  "frequency": "Once daily",
+  "instructions": "Take in the morning",
+  "start_date": "2026-03-28",
+  "family_member_id": "{{memberId}}"
+}
+
+### Get a specific medication
+GET {{base}}/medications/{{medId}}
+Authorization: Bearer {{token}}
+
+### Update a medication
+PUT {{base}}/medications/{{medId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dosage": "1000mg",
+  "frequency": "Once daily with dinner",
+  "is_active": true
+}
+
+### Deactivate (stop) a medication
+PUT {{base}}/medications/{{medId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_active": false,
+  "end_date": "2026-04-03"
+}
+
+### Delete a medication
+DELETE {{base}}/medications/{{medId}}
+Authorization: Bearer {{token}}

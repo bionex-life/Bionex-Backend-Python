@@ -1,0 +1,52 @@
+@base = http://localhost:8000/api/v1
+@token = PASTE_PATIENT_TOKEN_HERE
+@memberId = PASTE_FAMILY_MEMBER_ID_HERE
+
+### List all family members
+GET {{base}}/family
+Authorization: Bearer {{token}}
+
+### Add a family member
+# @name addMember
+POST {{base}}/family
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Suresh Sharma",
+  "relation": "FATHER",
+  "date_of_birth": "1960-03-20",
+  "gender": "MALE",
+  "blood_group": "A+"
+}
+
+### Add another family member
+POST {{base}}/family
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Kavita Sharma",
+  "relation": "MOTHER",
+  "date_of_birth": "1965-08-10",
+  "gender": "FEMALE",
+  "blood_group": "B+"
+}
+
+### Get a specific family member
+GET {{base}}/family/{{memberId}}
+Authorization: Bearer {{token}}
+
+### Update a family member
+PUT {{base}}/family/{{memberId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "blood_group": "A-",
+  "gender": "MALE"
+}
+
+### Delete a family member
+DELETE {{base}}/family/{{memberId}}
+Authorization: Bearer {{token}}

@@ -1,0 +1,11 @@
+@base = http://localhost:8000/api/v1
+@token = PASTE_PATIENT_TOKEN_HERE
+@paymentId = PASTE_PAYMENT_ID_HERE
+
+### List all my payments
+GET {{base}}/payments
+Authorization: Bearer {{token}}
+
+### Get a specific payment
+GET {{base}}/payments/{{paymentId}}
+Authorization: Bearer {{token}}

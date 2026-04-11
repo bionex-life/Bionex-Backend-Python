@@ -1,0 +1,6 @@
+###  BIONEX API — Base variables
+# Install "REST Client" extension (humao.rest-client) to run these files.
+# Set your @token after logging in, then use it across all other files.
+
+@base = http://localhost:8000/api/v1
+@token = PASTE_ACCESS_TOKEN_HERE

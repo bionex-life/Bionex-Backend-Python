@@ -1,0 +1,20 @@
+@base = http://localhost:8000/api/v1
+@token = PASTE_PATIENT_TOKEN_HERE
+
+### Get my profile (user + patient combined)
+GET {{base}}/patients/me
+Authorization: Bearer {{token}}
+
+### Update my patient profile
+PUT {{base}}/patients/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date_of_birth": "1992-06-15",
+  "gender": "FEMALE",
+  "blood_group": "O+",
+  "address": "12, MG Road, Bengaluru, Karnataka 560001",
+  "emergency_contact_name": "Rahul Sharma",
+  "emergency_contact_phone": "+919988776655"
+}

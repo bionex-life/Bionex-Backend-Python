@@ -1,0 +1,84 @@
+@base = http://localhost:8000/api/v1
+@token = PASTE_PATIENT_TOKEN_HERE
+@medId = PASTE_MEDICATION_ID_HERE
+@reminderId = PASTE_REMINDER_ID_HERE
+
+### List all reminders
+GET {{base}}/reminders
+Authorization: Bearer {{token}}
+
+### List reminders for a specific medication
+GET {{base}}/reminders?medication_id={{medId}}
+Authorization: Bearer {{token}}
+
+### Create a daily reminder
+# @name createReminder
+POST {{base}}/reminders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "medication_id": "{{medId}}",
+  "time": "08:00:00",
+  "frequency": "DAILY"
+}
+
+### Create a weekly reminder (Mon, Wed, Fri)
+POST {{base}}/reminders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "medication_id": "{{medId}}",
+  "time": "21:00:00",
+  "frequency": "WEEKLY",
+  "days_of_week": "MON,WED,FRI"
+}
+
+### Update a reminder
+PUT {{base}}/reminders/{{reminderId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "time": "09:30:00",
+  "is_active": true
+}
+
+### Delete a reminder
+DELETE {{base}}/reminders/{{reminderId}}
+Authorization: Bearer {{token}}
+
+### Log reminder as TAKEN
+POST {{base}}/reminders/{{reminderId}}/log
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "scheduled_date": "2026-04-03",
+  "status": "TAKEN"
+}
+
+### Log reminder as MISSED
+POST {{base}}/reminders/{{reminderId}}/log
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "scheduled_date": "2026-04-02",
+  "status": "MISSED"
+}
+
+### Log reminder as SKIPPED
+POST {{base}}/reminders/{{reminderId}}/log
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "scheduled_date": "2026-04-01",
+  "status": "SKIPPED"
+}
+
+### Get reminder logs
+GET {{base}}/reminders/{{reminderId}}/logs
+Authorization: Bearer {{token}}

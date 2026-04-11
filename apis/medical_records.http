@@ -1,0 +1,59 @@
+@base = http://localhost:8000/api/v1
+@token = PASTE_PATIENT_TOKEN_HERE
+@recordId = PASTE_RECORD_ID_HERE
+@memberId = PASTE_FAMILY_MEMBER_ID_HERE
+
+### List all my records (timeline — newest first)
+GET {{base}}/records
+Authorization: Bearer {{token}}
+
+### List records for a specific family member
+GET {{base}}/records?family_member_id={{memberId}}
+Authorization: Bearer {{token}}
+
+### Upload a prescription record
+# @name createRecord
+POST {{base}}/records
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "type": "PRESCRIPTION",
+  "title": "Antibiotic course — Dr. Rao",
+  "notes": "Amoxicillin 500mg twice daily for 7 days",
+  "file_url": "https://storage.bionex.app/records/rx_2026-04-03.pdf",
+  "record_date": "2026-04-03"
+}
+
+### Upload a lab report (for a family member)
+POST {{base}}/records
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "type": "LAB_REPORT",
+  "title": "Complete Blood Count",
+  "file_url": "https://storage.bionex.app/records/cbc_father.pdf",
+  "record_date": "2026-04-01",
+  "family_member_id": "{{memberId}}"
+}
+
+### Upload a diagnosis record
+POST {{base}}/records
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "type": "DIAGNOSIS",
+  "title": "Hypertension — Stage 1",
+  "notes": "Blood pressure 145/90, started on Amlodipine 5mg",
+  "record_date": "2026-03-28"
+}
+
+### View a specific record
+GET {{base}}/records/{{recordId}}
+Authorization: Bearer {{token}}
+
+### Delete a record
+DELETE {{base}}/records/{{recordId}}
+Authorization: Bearer {{token}}

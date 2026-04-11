@@ -1,0 +1,56 @@
+@base = http://localhost:8000/api/v1
+@adminToken = PASTE_ADMIN_TOKEN_HERE
+@orderId = PASTE_ORDER_ID_HERE
+
+# Admin can see: users, orders, payments, lab test catalogue
+# Admin CANNOT see: medical records, report contents, encrypted health data
+
+### ── Users ──────────────────────────────────────────────────────────────────
+
+### List all registered users (name, phone, email, role — no PHI)
+GET {{base}}/admin/users
+Authorization: Bearer {{adminToken}}
+
+### ── Lab Orders ──────────────────────────────────────────────────────────────
+
+### List all lab orders
+GET {{base}}/admin/orders
+Authorization: Bearer {{adminToken}}
+
+### Filter orders by status
+GET {{base}}/admin/orders?status_filter=BOOKED
+Authorization: Bearer {{adminToken}}
+
+GET {{base}}/admin/orders?status_filter=SAMPLE_COLLECTED
+Authorization: Bearer {{adminToken}}
+
+GET {{base}}/admin/orders?status_filter=PROCESSING
+Authorization: Bearer {{adminToken}}
+
+GET {{base}}/admin/orders?status_filter=COMPLETED
+Authorization: Bearer {{adminToken}}
+
+### Update order status — mark as SAMPLE_COLLECTED
+PUT {{base}}/admin/orders/{{orderId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "SAMPLE_COLLECTED"
+}
+
+### Update order status — mark as COMPLETED and upload report
+PUT {{base}}/admin/orders/{{orderId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "COMPLETED",
+  "report_url": "https://storage.bionex.app/reports/cbc_result_2026-04-03.pdf"
+}
+
+### ── Payments ─────────────────────────────────────────────────────────────
+
+### List all payments (revenue tracking)
+GET {{base}}/admin/payments
+Authorization: Bearer {{adminToken}}

@@ -2,10 +2,10 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 
 # Load all models so Alembic can detect schema changes
-from app.database import Base
+from app.database import Base, SCHEMA
 from app.models import *  # noqa: F401, F403
 
 config = context.config
@@ -26,6 +26,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_schemas=True,
+        version_table_schema=SCHEMA,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -38,7 +40,17 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        # Ensure the schema exists before running any migration.
+        # This is idempotent and safe to run on every deploy.
+        connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"))
+        connection.commit()
+
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_schemas=True,
+            version_table_schema=SCHEMA,
+        )
         with context.begin_transaction():
             context.run_migrations()
 

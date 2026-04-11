@@ -1,0 +1,57 @@
+@base = http://localhost:8000/api/v1
+@token = PASTE_ANY_TOKEN_HERE
+@adminToken = PASTE_ADMIN_TOKEN_HERE
+@testId = PASTE_LAB_TEST_ID_HERE
+
+### List all active lab tests (any logged-in user)
+GET {{base}}/lab-tests
+Authorization: Bearer {{token}}
+
+### Filter by category
+GET {{base}}/lab-tests?category=Haematology
+Authorization: Bearer {{token}}
+
+### Get a specific lab test
+GET {{base}}/lab-tests/{{testId}}
+Authorization: Bearer {{token}}
+
+### ── Admin only ──────────────────────────────────────────────────────────
+
+### Create a lab test
+# @name createLabTest
+POST {{base}}/lab-tests
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Complete Blood Count (CBC)",
+  "description": "Measures different components of blood",
+  "category": "Haematology",
+  "price": 299.00
+}
+
+### Create another lab test
+POST {{base}}/lab-tests
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "HbA1c",
+  "description": "3-month average blood sugar level",
+  "category": "Biochemistry",
+  "price": 499.00
+}
+
+### Update a lab test
+PUT {{base}}/lab-tests/{{testId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "price": 349.00,
+  "is_active": true
+}
+
+### Soft-delete a lab test (deactivate)
+DELETE {{base}}/lab-tests/{{testId}}
+Authorization: Bearer {{adminToken}}

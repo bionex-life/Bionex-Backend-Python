@@ -1,0 +1,71 @@
+@base = http://localhost:8000/api/v1
+
+### Register a new patient
+# @name registerPatient
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Priya Sharma",
+  "phone": "+919876543210",
+  "password": "SecurePass123",
+  "role": "PATIENT"
+}
+
+### Register a doctor
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Dr. Arjun Mehta",
+  "phone": "+919123456789",
+  "password": "DoctorPass123",
+  "role": "DOCTOR"
+}
+
+### Register an admin
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin User",
+  "phone": "+911234567890",
+  "password": "AdminPass123",
+  "role": "ADMIN"
+}
+
+### Login — returns access_token (copy it to @token in other files)
+# @name loginPatient
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "phone": "+919876543210",
+  "password": "SecurePass123"
+}
+
+### Login as doctor
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "phone": "+919123456789",
+  "password": "DoctorPass123"
+}
+
+### Login as admin
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "phone": "+911234567890",
+  "password": "AdminPass123"
+}
+
+### Refresh access token
+POST {{base}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "PASTE_REFRESH_TOKEN_HERE"
+}
