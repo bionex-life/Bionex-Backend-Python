@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
 
     # ── Rate limiting ─────────────────────────────────────────────────────────
-    RATE_LIMIT_AUTH: str = "10/minute"
-    RATE_LIMIT_DEFAULT: str = "200/minute"
+    RATE_LIMIT_AUTH: str = "30/minute"
+    RATE_LIMIT_DEFAULT: str = "1000/minute"
 
     @property
     def allowed_origins_list(self) -> List[str]:
