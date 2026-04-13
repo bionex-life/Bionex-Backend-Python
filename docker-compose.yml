@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://bionex:bionex@postgres:5432/bionex
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=change-this-in-production-to-a-secure-random-key
+      - DEBUG=true
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - bionex-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: bionex
+      POSTGRES_USER: bionex
+      POSTGRES_PASSWORD: bionex
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bionex -d bionex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bionex-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - bionex-network
+
+  # PgAdmin (Optional - Database GUI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@bionex.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - bionex-network
+    profiles:
+      - tools
+
+  # Redis Commander (Optional - Redis GUI)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - bionex-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  bionex-network:
+    driver: bridge
