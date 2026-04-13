@@ -58,4 +58,4 @@ def test_login_wrong_password(client):
 
 def test_protected_endpoint_without_token(client):
     resp = client.get("/api/v1/patients/me")
-    assert resp.status_code == 403
+    assert resp.status_code == 401

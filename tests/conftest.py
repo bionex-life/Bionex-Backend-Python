@@ -11,10 +11,10 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from app.database import Base, get_db
+from app.database import Base, SCHEMA, get_db
 from app.main import app
 
 TEST_DB_URL = os.environ.get(
@@ -28,6 +28,10 @@ TestingSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @pytest.fixture(scope="function", autouse=False)
 def db():
+    with engine.connect() as connection:
+        connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"))
+        connection.commit()
+
     Base.metadata.create_all(bind=engine)
     session = TestingSession()
     try:
