@@ -74,8 +74,11 @@ def update_family_member(
     db: Session = Depends(get_db),
 ):
     member = _get_member(member_id, patient, db)
+    # Only allow specific fields to be updated (security: prevent injection)
+    allowed_fields = {'name', 'relationship', 'date_of_birth', 'gender', 'blood_group', 'notes'}
     for field, value in payload.model_dump(exclude_none=True).items():
-        setattr(member, field, value)
+        if field in allowed_fields:
+            setattr(member, field, value)
     db.commit()
     db.refresh(member)
     ip = request.client.host if request.client else None

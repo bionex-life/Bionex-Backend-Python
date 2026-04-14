@@ -75,13 +75,19 @@ def login(request: Request, payload: UserLogin, db: Session = Depends(get_db)):
         )
 
     access_token = create_access_token({"sub": str(user.id), "role": user.role})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
     ip = request.client.host if request.client else None
     log_event(db, "LOGIN", "User", str(user.id), user.id, ip_address=ip)
-    return {"access_token": access_token, "token_type": "bearer", "role": user.role}
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "role": user.role
+    }
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh(payload: TokenRefresh, db: Session = Depends(get_db)):
+def refresh(payload: TokenRefresh, request: Request, db: Session = Depends(get_db)):
     try:
         data = decode_token(payload.refresh_token)
         if data.get("type") != "refresh":
@@ -96,8 +102,18 @@ def refresh(payload: TokenRefresh, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Account not found"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Account not found or inactive"
         )
-
+    # Generate new tokens
     access_token = create_access_token({"sub": str(user.id), "role": user.role})
-    return {"access_token": access_token, "token_type": "bearer", "role": user.role}
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+
+    ip = request.client.host if request.client else None
+    log_event(db, "REFRESH_TOKEN", "User", str(user.id), user.id, ip_address=ip)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "role": user.role,
+    }

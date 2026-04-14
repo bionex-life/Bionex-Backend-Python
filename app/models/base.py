@@ -14,7 +14,7 @@ class EncryptedString(TypeDecorator):
     """Fernet-encrypted string column.
 
     Transparently encrypts on write and decrypts on read.
-    Falls back to plaintext if FIELD_ENCRYPTION_KEY is not set (dev / test mode).
+    Raises error if FIELD_ENCRYPTION_KEY is not set (enforce encryption).
     """
 
     impl = String
@@ -25,7 +25,10 @@ class EncryptedString(TypeDecorator):
 
         key = os.environ.get("FIELD_ENCRYPTION_KEY", "").strip()
         if not key:
-            return None
+            raise ValueError(
+                "FIELD_ENCRYPTION_KEY is required for field-level encryption of sensitive data (PII). "
+                "Generate with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            )
         return Fernet(key.encode())
 
     def process_bind_param(self, value, dialect):

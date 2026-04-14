@@ -88,8 +88,11 @@ def update_medication(
     db: Session = Depends(get_db),
 ):
     med = _get_medication(med_id, patient, db)
+    # Only allow specific fields to be updated (security: prevent injection)
+    allowed_fields = {'name', 'dosage', 'frequency', 'start_date', 'end_date', 'is_active', 'notes'}
     for field, value in payload.model_dump(exclude_none=True).items():
-        setattr(med, field, value)
+        if field in allowed_fields:
+            setattr(med, field, value)
     db.commit()
     db.refresh(med)
     ip = request.client.host if request.client else None

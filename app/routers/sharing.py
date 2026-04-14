@@ -25,7 +25,7 @@ from app.database import get_db
 from app.dependencies import get_patient_profile, require_doctor, require_patient
 from app.models.access_permission import AccessPermission, RequestStatus
 from app.models.patient import Patient
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.access_permission import (
     AccessPermissionOut,
     DoctorAccessRequest,
@@ -56,8 +56,11 @@ def initiate_sharing(
     doctor = db.query(User).filter(
         User.id == payload.doctor_user_id, User.is_active == True
     ).first()
-    if not doctor or doctor.role.value != "DOCTOR":
-        raise HTTPException(status_code=400, detail="Doctor not found")
+    if not doctor or doctor.role != UserRole.DOCTOR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only active doctors can be granted access"
+        )
 
     perm = create_patient_initiated_permission(
         db,

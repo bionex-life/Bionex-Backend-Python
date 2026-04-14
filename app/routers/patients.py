@@ -35,8 +35,18 @@ def update_my_profile(
     patient: Patient = Depends(get_patient_profile),
     db: Session = Depends(get_db),
 ):
+    # Only allow specific fields to be updated (security: prevent injection)
+    allowed_fields = {
+        'date_of_birth',
+        'gender',
+        'blood_group',
+        'address',
+        'emergency_contact_name',
+        'emergency_contact_phone'
+    }
     for field, value in payload.model_dump(exclude_none=True).items():
-        setattr(patient, field, value)
+        if field in allowed_fields:
+            setattr(patient, field, value)
     db.commit()
     db.refresh(patient)
     ip = request.client.host if request.client else None

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # ── JWT ───────────────────────────────────────────────────────────────────
-    SECRET_KEY: str = "change-me-in-production"
+    SECRET_KEY: str = ""  # MUST be set in production
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -44,7 +44,23 @@ class Settings(BaseSettings):
     def allowed_origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
 
+    def validate_config(self) -> None:
+        """Validate critical configuration settings."""
+        if not self.SECRET_KEY or self.SECRET_KEY == "change-me-in-production":
+            raise ValueError(
+                "ERROR: SECRET_KEY must be configured in .env file. "
+                "It must be a strong random string (min 32 characters). "
+                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+            )
+        if not self.DEBUG and not self.FIELD_ENCRYPTION_KEY:
+            raise ValueError(
+                "ERROR: FIELD_ENCRYPTION_KEY must be configured in production. "
+                "Generate with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            )
+
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    settings.validate_config()
+    return settings
