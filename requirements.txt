@@ -13,6 +13,7 @@ slowapi==0.1.9
 redis==7.4.0
 httpx==0.28.1
 fhir.resources==8.2.0
+pyotp==2.9.0
 
 # Dev / security tooling
 bandit==1.9.4

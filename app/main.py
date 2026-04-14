@@ -1,12 +1,15 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.config import get_settings
+from app.middleware.security import CSRFProtectionMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
 from app.routers import (
     admin,
     auth,
@@ -48,10 +51,37 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+# ── Exception Handlers ────────────────────────────────────────────────────────
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    """Convert Pydantic validation errors to 400 Bad Request instead of 422."""
+    # Extract error details properly for JSON serialization
+    errors = []
+    for error in exc.errors():
+        error_dict = {
+            "type": error.get("type", "value_error"),
+            "loc": list(error.get("loc", [])),
+            "msg": error.get("msg", "Validation error"),
+        }
+        errors.append(error_dict)
+    
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": errors},
+    )
+
+
 # ── Middleware ────────────────────────────────────────────────────────────────
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Security middleware (Enhanced Security #9, #10)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestIDMiddleware)
+app.add_middleware(CSRFProtectionMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,3 +115,4 @@ app.include_router(payments.router, prefix=f"{PREFIX}/payments", tags=["payments
 app.include_router(sharing.router, prefix=f"{PREFIX}/sharing", tags=["sharing"])
 app.include_router(doctor.router, prefix=f"{PREFIX}/doctor", tags=["doctor"])
 app.include_router(admin.router, prefix=f"{PREFIX}/admin", tags=["admin"])
+

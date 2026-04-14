@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
@@ -41,3 +42,23 @@ def create_refresh_token(data: dict) -> str:
 def decode_token(token: str) -> dict:
     """Raises jose.JWTError on invalid / expired tokens."""
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API Key Management (Enhanced Security #4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_api_key() -> str:
+    """Generate a new secure API key."""
+    return f"bx_{secrets.token_urlsafe(32)}"
+
+
+def hash_api_key(api_key: str) -> str:
+    """Hash an API key for storage."""
+    return pwd_context.hash(api_key)
+
+
+def verify_api_key(api_key: str, hashed_key: str) -> bool:
+    """Verify an API key against its hash."""
+    return pwd_context.verify(api_key, hashed_key)
+

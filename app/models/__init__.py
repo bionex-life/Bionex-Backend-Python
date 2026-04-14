@@ -5,6 +5,7 @@ from app.models.doctor_access_log import DoctorAccessLog
 from app.models.family_member import FamilyMember, Relation
 from app.models.lab_order import CollectionType, LabOrder, OrderStatus
 from app.models.lab_test import LabTest
+from app.models.login_attempt import APIKey, LoginAttempt, PasswordHistory, TOTPSecret
 from app.models.medical_record import MedicalRecord, RecordType
 from app.models.medication import Medication
 from app.models.patient import Gender, Patient
@@ -37,4 +38,8 @@ __all__ = [
     "RequestStatus",
     "AuditLog",
     "DoctorAccessLog",
+    "LoginAttempt",
+    "PasswordHistory",
+    "APIKey",
+    "TOTPSecret",
 ]
