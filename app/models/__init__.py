@@ -13,6 +13,19 @@ from app.models.payment import Payment, PaymentStatus
 from app.models.reminder import Reminder, ReminderFrequency, ReminderLog, ReminderStatus
 from app.models.user import User, UserRole
 
+# Phase 2: Encryption Infrastructure Models
+from app.models.encryption_models import (
+    UserKeypair,
+    SessionKey,
+    SessionKeyStatus,
+    EncryptedRecordVault,
+    CryptographicAuditLog,
+    CryptoAuditLogStatus,
+    KeyRotationHistory,
+    KeyRotationStatus,
+    ActorType,
+)
+
 __all__ = [
     "User",
     "UserRole",
@@ -42,4 +55,14 @@ __all__ = [
     "PasswordHistory",
     "APIKey",
     "TOTPSecret",
+    # Phase 2: Encryption Infrastructure
+    "UserKeypair",
+    "SessionKey",
+    "SessionKeyStatus",
+    "EncryptedRecordVault",
+    "CryptographicAuditLog",
+    "CryptoAuditLogStatus",
+    "KeyRotationHistory",
+    "KeyRotationStatus",
+    "ActorType",
 ]

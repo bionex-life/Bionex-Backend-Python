@@ -32,7 +32,24 @@ class Settings(BaseSettings):
 
     # ── Redis ─────────────────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
+    # ── Cryptography & Encryption (Phase 1) ───────────────────────────────────
+    # Key Exchange Algorithm
+    CRYPTO_ALGORITHM: str = "ECDH_P256"
+    # Hash Algorithm
+    CRYPTO_HASH: str = "SHA256"
+    # Symmetric Cipher
+    CRYPTO_CIPHER: str = "CHACHA20_POLY1305"
+    # Session Key Time-To-Live
+    SESSION_KEY_TTL_DAYS: int = 7
+    SESSION_KEY_TTL_MINUTES: int = 60  # For testing
+    # Key Rotation
+    KEY_ROTATION_DAYS: int = 90
 
+    # ── HashiCorp Vault (Phase 1) ──────────────────────────────────────────────
+    VAULT_ADDR: str = "http://localhost:8200"
+    VAULT_TOKEN: str = ""  # Set in .env or from environment
+    VAULT_NAMESPACE: str = "bionex"
+    VAULT_SKIP_VERIFY: bool = False  # NEVER set to True in production
     # ── CORS — comma-separated origins ────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
 

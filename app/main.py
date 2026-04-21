@@ -11,9 +11,13 @@ from slowapi.util import get_remote_address
 from app.config import get_settings
 from app.middleware.security import CSRFProtectionMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
 from app.routers import (
+    access_control,
     admin,
     auth,
+    compliance,
     doctor,
+    doctor_access,
+    encryption,
     family,
     lab_orders,
     lab_tests,
@@ -115,4 +119,14 @@ app.include_router(payments.router, prefix=f"{PREFIX}/payments", tags=["payments
 app.include_router(sharing.router, prefix=f"{PREFIX}/sharing", tags=["sharing"])
 app.include_router(doctor.router, prefix=f"{PREFIX}/doctor", tags=["doctor"])
 app.include_router(admin.router, prefix=f"{PREFIX}/admin", tags=["admin"])
+
+# Phase 4: Encryption routers
+app.include_router(encryption.router, tags=["encryption"])
+app.include_router(doctor_access.router, tags=["doctor-access"])
+
+# Phase 5: Access Control routers
+app.include_router(access_control.router, tags=["access-control"])
+
+# Phase 6: Compliance routers
+app.include_router(compliance.router, tags=["compliance"])
 

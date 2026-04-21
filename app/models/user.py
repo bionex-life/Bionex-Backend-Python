@@ -54,3 +54,23 @@ class User(Base, TimestampMixin):
         back_populates="doctor",
     )
     audit_logs = relationship("AuditLog", back_populates="user")
+    
+    # ── Phase 2: Encryption Infrastructure (NEW)
+    keypair = relationship(
+        "UserKeypair",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        foreign_keys="UserKeypair.user_id"
+    )
+    crypto_audit_logs = relationship(
+        "CryptographicAuditLog",
+        back_populates="actor",
+        foreign_keys="CryptographicAuditLog.actor_id"
+    )
+    key_rotations = relationship(
+        "KeyRotationHistory",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="KeyRotationHistory.user_id"
+    )

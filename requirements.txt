@@ -15,6 +15,10 @@ httpx==0.28.1
 fhir.resources==8.2.0
 pyotp==2.9.0
 
+# Phase 1: Encryption Infrastructure
+hvac==1.2.1  # HashiCorp Vault client for secrets management
+celery==5.3.4  # Async task processing for key rotation and audit logging
+
 # Dev / security tooling
 bandit==1.9.4
 pip-audit==2.10.0

@@ -10,10 +10,10 @@ services:
       - DATABASE_URL=postgresql://bionex:bionex@postgres:5432/bionex
       - TEST_DATABASE_URL=postgresql://bionex:bionex@postgres:5432/bionex_test
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=change-this-in-production-to-a-secure-random-key
+      - SECRET_KEY=cSbKo4nVYIvLqzoORs56hrSHdZkSGhS28Iq_xI1TWMU
       - DEBUG=true
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
-      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY:-}
+      - FIELD_ENCRYPTION_KEY=Dq_pEM07P3BWUTGn-dHJx-xaqb-KWuZXYm-rwR_C9bY=
     depends_on:
       postgres:
         condition: service_healthy

@@ -58,3 +58,17 @@ class Patient(Base, TimestampMixin):
         foreign_keys="DoctorAccessLog.patient_id",
         back_populates="patient",
     )
+    
+    # ── Phase 2: Encryption Infrastructure (NEW)
+    session_keys = relationship(
+        "SessionKey",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        foreign_keys="SessionKey.patient_id"
+    )
+    encrypted_record_vaults = relationship(
+        "EncryptedRecordVault",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        foreign_keys="EncryptedRecordVault.patient_id"
+    )
