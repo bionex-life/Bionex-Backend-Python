@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, status
@@ -10,6 +11,7 @@ from slowapi.util import get_remote_address
 
 from app.config import get_settings
 from app.middleware.security import CSRFProtectionMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
+from app.migrations import run_migrations
 from app.routers import (
     access_control,
     admin,
@@ -29,6 +31,7 @@ from app.routers import (
     sharing,
 )
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 limiter = Limiter(
@@ -39,9 +42,13 @@ limiter = Limiter(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: could add DB connectivity check here
+    # Startup: Run database migrations
+    logger.info("Starting application...")
+    run_migrations()
+    logger.info("Application started successfully")
     yield
     # Shutdown: clean up resources if needed
+    logger.info("Shutting down application...")
 
 
 app = FastAPI(

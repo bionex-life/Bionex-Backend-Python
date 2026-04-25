@@ -78,16 +78,17 @@ def upgrade() -> None:
         sa.Column('revoked_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('revocation_reason', sa.VARCHAR(255), nullable=True),
         sa.PrimaryKeyConstraint('id', name='pk_user_keypairs'),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='fk_user_keypairs_user_id'),
+        sa.ForeignKeyConstraint(['user_id'], ['bionex.users.id'], ondelete='CASCADE', name='fk_user_keypairs_user_id'),
         sa.UniqueConstraint('user_id', name='uq_user_keypairs_user_id'),
         sa.UniqueConstraint('public_key_fingerprint', name='uq_user_keypairs_fingerprint'),
+        schema='bionex'
     )
     
     # Indexes for user_keypairs
-    op.create_index('ix_user_keypairs_user_id', 'user_keypairs', ['user_id'])
-    op.create_index('ix_user_keypairs_fingerprint', 'user_keypairs', ['public_key_fingerprint'])
-    op.create_index('ix_user_keypairs_created', 'user_keypairs', ['created_at'])
-    op.create_index('ix_user_keypairs_user_active', 'user_keypairs', ['user_id', 'is_revoked'])
+    op.create_index('ix_user_keypairs_user_id', 'user_keypairs', ['user_id'], schema='bionex')
+    op.create_index('ix_user_keypairs_fingerprint', 'user_keypairs', ['public_key_fingerprint'], schema='bionex')
+    op.create_index('ix_user_keypairs_created', 'user_keypairs', ['created_at'], schema='bionex')
+    op.create_index('ix_user_keypairs_user_active', 'user_keypairs', ['user_id', 'is_revoked'], schema='bionex')
     
     # ────────────────────────────────────────────────────────────────
     # Table 2: session_keys
@@ -108,16 +109,17 @@ def upgrade() -> None:
         sa.Column('revoked_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('revocation_reason', sa.VARCHAR(255), nullable=True),
         sa.PrimaryKeyConstraint('id', name='pk_session_keys'),
-        sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ondelete='CASCADE', name='fk_session_keys_patient_id'),
-        sa.ForeignKeyConstraint(['doctor_id'], ['users.id'], ondelete='CASCADE', name='fk_session_keys_doctor_id'),
+        sa.ForeignKeyConstraint(['patient_id'], ['bionex.patients.id'], ondelete='CASCADE', name='fk_session_keys_patient_id'),
+        sa.ForeignKeyConstraint(['doctor_id'], ['bionex.users.id'], ondelete='CASCADE', name='fk_session_keys_doctor_id'),
         sa.UniqueConstraint('session_key_hash', name='uq_session_keys_hash'),
+        schema='bionex'
     )
     
     # Indexes for session_keys
-    op.create_index('ix_session_keys_patient_doctor', 'session_keys', ['patient_id', 'doctor_id'])
-    op.create_index('ix_session_keys_hash', 'session_keys', ['session_key_hash'])
-    op.create_index('ix_session_keys_expires', 'session_keys', ['expires_at'])
-    op.create_index('ix_session_keys_active', 'session_keys', ['status', 'expires_at'])
+    op.create_index('ix_session_keys_patient_doctor', 'session_keys', ['patient_id', 'doctor_id'], schema='bionex')
+    op.create_index('ix_session_keys_hash', 'session_keys', ['session_key_hash'], schema='bionex')
+    op.create_index('ix_session_keys_expires', 'session_keys', ['expires_at'], schema='bionex')
+    op.create_index('ix_session_keys_active', 'session_keys', ['status', 'expires_at'], schema='bionex')
     
     # ────────────────────────────────────────────────────────────────
     # Table 3: encrypted_record_vaults
@@ -140,19 +142,20 @@ def upgrade() -> None:
         sa.Column('is_deleted', sa.Boolean(), server_default='false', nullable=False),
         sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint('id', name='pk_encrypted_record_vaults'),
-        sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ondelete='CASCADE', name='fk_encrypted_vaults_patient_id'),
-        sa.ForeignKeyConstraint(['original_record_id'], ['medical_records.id'], ondelete='CASCADE', name='fk_encrypted_vaults_record_id'),
+        sa.ForeignKeyConstraint(['patient_id'], ['bionex.patients.id'], ondelete='CASCADE', name='fk_encrypted_vaults_patient_id'),
+        sa.ForeignKeyConstraint(['original_record_id'], ['bionex.medical_records.id'], ondelete='CASCADE', name='fk_encrypted_vaults_record_id'),
+        schema='bionex'
     )
     
     # Indexes for encrypted_record_vaults
-    op.create_index('ix_encrypted_vaults_patient', 'encrypted_record_vaults', ['patient_id'])
-    op.create_index('ix_encrypted_vaults_type', 'encrypted_record_vaults', ['record_type'])
-    op.create_index('ix_encrypted_vaults_date', 'encrypted_record_vaults', ['record_date'])
-    op.create_index('ix_encrypted_vaults_title_hash', 'encrypted_record_vaults', ['record_title_hash'])
-    op.create_index('ix_encrypted_vaults_deleted', 'encrypted_record_vaults', ['is_deleted'])
-    op.create_index('ix_encrypted_vaults_type_date', 'encrypted_record_vaults', ['record_type', 'record_date'])
-    op.create_index('ix_encrypted_vaults_active', 'encrypted_record_vaults', ['is_deleted', 'patient_id'])
-    op.create_index('ix_encrypted_vaults_patient_type', 'encrypted_record_vaults', ['patient_id', 'record_type'])
+    op.create_index('ix_encrypted_vaults_patient', 'encrypted_record_vaults', ['patient_id'], schema='bionex')
+    op.create_index('ix_encrypted_vaults_type', 'encrypted_record_vaults', ['record_type'], schema='bionex')
+    op.create_index('ix_encrypted_vaults_date', 'encrypted_record_vaults', ['record_date'], schema='bionex')
+    op.create_index('ix_encrypted_vaults_title_hash', 'encrypted_record_vaults', ['record_title_hash'], schema='bionex')
+    op.create_index('ix_encrypted_vaults_deleted', 'encrypted_record_vaults', ['is_deleted'], schema='bionex')
+    op.create_index('ix_encrypted_vaults_type_date', 'encrypted_record_vaults', ['record_type', 'record_date'], schema='bionex')
+    op.create_index('ix_encrypted_vaults_active', 'encrypted_record_vaults', ['is_deleted', 'patient_id'], schema='bionex')
+    op.create_index('ix_encrypted_vaults_patient_type', 'encrypted_record_vaults', ['patient_id', 'record_type'], schema='bionex')
     
     # ────────────────────────────────────────────────────────────────
     # Table 4: cryptographic_audit_logs (IMMUTABLE)
@@ -175,17 +178,18 @@ def upgrade() -> None:
         sa.Column('status_message', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='pk_cryptographic_audit_logs'),
-        sa.ForeignKeyConstraint(['actor_id'], ['users.id'], ondelete='SET NULL', name='fk_audit_logs_actor_id'),
+        sa.ForeignKeyConstraint(['actor_id'], ['bionex.users.id'], ondelete='SET NULL', name='fk_audit_logs_actor_id'),
+        schema='bionex'
     )
     
     # Indexes for cryptographic_audit_logs
-    op.create_index('ix_audit_logs_actor', 'cryptographic_audit_logs', ['actor_id'])
-    op.create_index('ix_audit_logs_resource', 'cryptographic_audit_logs', ['resource_type', 'resource_id'])
-    op.create_index('ix_audit_logs_action', 'cryptographic_audit_logs', ['action'])
-    op.create_index('ix_audit_logs_created', 'cryptographic_audit_logs', ['created_at'])
-    op.create_index('ix_audit_logs_request_id', 'cryptographic_audit_logs', ['request_id'])
-    op.create_index('ix_audit_logs_action_status', 'cryptographic_audit_logs', ['action', 'status'])
-    op.create_index('ix_audit_logs_actor_type', 'cryptographic_audit_logs', ['actor_id', 'actor_type'])
+    op.create_index('ix_audit_logs_actor', 'cryptographic_audit_logs', ['actor_id'], schema='bionex')
+    op.create_index('ix_audit_logs_resource', 'cryptographic_audit_logs', ['resource_type', 'resource_id'], schema='bionex')
+    op.create_index('ix_audit_logs_action', 'cryptographic_audit_logs', ['action'], schema='bionex')
+    op.create_index('ix_audit_logs_created', 'cryptographic_audit_logs', ['created_at'], schema='bionex')
+    op.create_index('ix_audit_logs_request_id', 'cryptographic_audit_logs', ['request_id'], schema='bionex')
+    op.create_index('ix_audit_logs_action_status', 'cryptographic_audit_logs', ['action', 'status'], schema='bionex')
+    op.create_index('ix_audit_logs_actor_type', 'cryptographic_audit_logs', ['actor_id', 'actor_type'], schema='bionex')
     
     # ────────────────────────────────────────────────────────────────
     # Table 5: key_rotation_history
@@ -202,24 +206,25 @@ def upgrade() -> None:
         sa.Column('rotated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint('id', name='pk_key_rotation_history'),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='fk_rotation_history_user_id'),
+        sa.ForeignKeyConstraint(['user_id'], ['bionex.users.id'], ondelete='CASCADE', name='fk_rotation_history_user_id'),
+        schema='bionex'
     )
     
     # Indexes for key_rotation_history
-    op.create_index('ix_rotation_history_user', 'key_rotation_history', ['user_id'])
-    op.create_index('ix_rotation_history_status', 'key_rotation_history', ['user_id', 'status'])
-    op.create_index('ix_rotation_history_created', 'key_rotation_history', ['rotated_at'])
+    op.create_index('ix_rotation_history_user', 'key_rotation_history', ['user_id'], schema='bionex')
+    op.create_index('ix_rotation_history_status', 'key_rotation_history', ['user_id', 'status'], schema='bionex')
+    op.create_index('ix_rotation_history_created', 'key_rotation_history', ['rotated_at'], schema='bionex')
 
 
 def downgrade() -> None:
     """Drop Phase 2 encryption infrastructure tables"""
     
     # Drop tables in reverse order of dependencies
-    op.drop_table('key_rotation_history')
-    op.drop_table('cryptographic_audit_logs')
-    op.drop_table('encrypted_record_vaults')
-    op.drop_table('session_keys')
-    op.drop_table('user_keypairs')
+    op.drop_table('key_rotation_history', schema='bionex')
+    op.drop_table('cryptographic_audit_logs', schema='bionex')
+    op.drop_table('encrypted_record_vaults', schema='bionex')
+    op.drop_table('session_keys', schema='bionex')
+    op.drop_table('user_keypairs', schema='bionex')
     
     # Drop ENUM types
     op.execute('DROP TYPE IF EXISTS actor_type')

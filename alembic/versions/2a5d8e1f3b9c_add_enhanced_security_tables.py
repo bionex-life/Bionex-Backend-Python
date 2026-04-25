@@ -42,6 +42,7 @@ def upgrade() -> None:
         sa.Index("ix_login_attempts_user_id", "user_id"),
         sa.Index("ix_login_attempts_phone", "phone"),
         sa.Index("ix_login_attempts_timestamp", "timestamp"),
+        schema='bionex'
     )
     
     # Create password_history table
@@ -54,6 +55,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.Index("ix_password_history_user_id", "user_id"),
         sa.Index("ix_password_history_changed_at", "changed_at"),
+        schema='bionex'
     )
     
     # Create api_keys table
@@ -73,6 +75,7 @@ def upgrade() -> None:
         sa.Index("ix_api_keys_user_id", "user_id"),
         sa.Index("ix_api_keys_key_hash", "key_hash"),
         sa.Index("ix_api_keys_is_active", "is_active"),
+        schema='bionex'
     )
     
     # Create totp_secrets table
@@ -87,21 +90,22 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.Index("ix_totp_secrets_user_id", "user_id"),
+        schema='bionex'
     )
 
 
 def downgrade() -> None:
     # Drop tables in reverse order
-    op.drop_table("totp_secrets")
-    op.drop_table("api_keys")
-    op.drop_table("password_history")
-    op.drop_table("login_attempts")
+    op.drop_table("totp_secrets", schema='bionex')
+    op.drop_table("api_keys", schema='bionex')
+    op.drop_table("password_history", schema='bionex')
+    op.drop_table("login_attempts", schema='bionex')
     
     # Remove columns from users table
-    op.drop_column("users", "is_2fa_enabled")
-    op.drop_column("users", "password_expires_at")
-    op.drop_column("users", "last_password_change")
-    op.drop_column("users", "last_failed_login")
-    op.drop_column("users", "failed_login_attempts")
-    op.drop_column("users", "locked_until")
-    op.drop_column("users", "is_locked")
+    op.drop_column("users", "is_2fa_enabled", schema='bionex')
+    op.drop_column("users", "password_expires_at", schema='bionex')
+    op.drop_column("users", "last_password_change", schema='bionex')
+    op.drop_column("users", "last_failed_login", schema='bionex')
+    op.drop_column("users", "failed_login_attempts", schema='bionex')
+    op.drop_column("users", "locked_until", schema='bionex')
+    op.drop_column("users", "is_locked", schema='bionex')
