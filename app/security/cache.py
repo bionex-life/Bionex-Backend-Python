@@ -429,3 +429,13 @@ class CacheManager:
         except RedisError as e:
             logger.error(f"Failed to clear cache: {e}")
             return False
+
+
+# Singleton instance for global use
+try:
+    from app.config import get_settings
+    settings = get_settings()
+    cache_manager = CacheManager(redis_url=settings.REDIS_URL)
+except Exception as e:
+    logger.warning(f"Failed to initialize cache_manager singleton: {e}")
+    cache_manager = None

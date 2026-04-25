@@ -13,7 +13,7 @@ from datetime import datetime
 import enum
 import uuid
 
-from app.models.base import Base
+from app.database import Base
 
 
 class SharingRequestStatus(str, enum.Enum):

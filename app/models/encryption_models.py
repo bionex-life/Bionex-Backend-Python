@@ -30,7 +30,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
-from app.models.base import TimestampMixin, Base
+from app.models.base import TimestampMixin
+from app.database import Base
 
 
 # ────────────────────────────────────────────────────────────────
@@ -140,11 +141,6 @@ class UserKeypair(Base, TimestampMixin):
 
     # Relationships
     user = relationship("User", back_populates="keypair", foreign_keys=[user_id])
-    session_keys_created = relationship(
-        "SessionKey",
-        foreign_keys="SessionKey.doctor_id",
-        back_populates="doctor",
-    )
 
     __table_args__ = (
         Index("ix_user_keypairs_user_active", "user_id", "is_revoked"),

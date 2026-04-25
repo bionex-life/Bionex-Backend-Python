@@ -14,7 +14,8 @@ from datetime import datetime
 import enum
 import uuid
 
-from app.models.base import Base
+from app.database import Base
+from app.models.base import TimestampMixin
 
 
 class ComplianceExportStatus(str, enum.Enum):
@@ -71,7 +72,7 @@ class ComplianceExport(Base):
     record_count = Column(Integer, default=0)
     includes_audit = Column(Boolean, default=True)
     includes_records = Column(Boolean, default=True)
-    metadata = Column(JSON, nullable=True)
+    export_metadata = Column(JSON, nullable=True)
     
     def __repr__(self):
         return f"<ComplianceExport {self.id} ({self.export_type})>"

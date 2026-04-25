@@ -1,7 +1,7 @@
 """Phase 2: Add encryption infrastructure tables
 
 Revision ID: 2b7c4f8a1e3d
-Revises: f9b39b741c92
+Revises: 2a5d8e1f3b9c
 Create Date: 2026-04-21 12:00:00.000000
 
 Tables created:
@@ -21,7 +21,7 @@ from sqlalchemy.dialects import postgresql
 
 # Revision identifiers (auto-updated by Alembic)
 revision = '2b7c4f8a1e3d'
-down_revision = 'f9b39b741c92'
+down_revision = '2a5d8e1f3b9c'
 branch_labels = None
 depends_on = None
 
@@ -29,34 +29,37 @@ depends_on = None
 def upgrade() -> None:
     """Create Phase 2 encryption infrastructure tables"""
     
-    # Create custom ENUM types
-    session_key_status = postgresql.ENUM(
-        'ACTIVE', 'ROTATED', 'REVOKED', 'EXPIRED',
-        name='session_key_status',
-        create_type=True
-    )
-    session_key_status.create(op.get_bind(), checkfirst=True)
+    # Create custom ENUM types (using raw SQL for idempotency)
+    conn = op.get_bind()
     
-    key_rotation_status = postgresql.ENUM(
-        'PENDING', 'COMPLETED', 'FAILED',
-        name='key_rotation_status',
-        create_type=True
-    )
-    key_rotation_status.create(op.get_bind(), checkfirst=True)
+    # Create ENUMs using raw SQL with IF NOT EXISTS equivalent
+    try:
+        conn.execute(sa.text("""
+            CREATE TYPE session_key_status AS ENUM ('ACTIVE', 'ROTATED', 'REVOKED', 'EXPIRED')
+        """))
+    except:
+        pass  # ENUM already exists
     
-    crypto_audit_log_status = postgresql.ENUM(
-        'SUCCESS', 'FAILED', 'DENIED',
-        name='crypto_audit_log_status',
-        create_type=True
-    )
-    crypto_audit_log_status.create(op.get_bind(), checkfirst=True)
+    try:
+        conn.execute(sa.text("""
+            CREATE TYPE key_rotation_status AS ENUM ('PENDING', 'COMPLETED', 'FAILED')
+        """))
+    except:
+        pass  # ENUM already exists
     
-    actor_type = postgresql.ENUM(
-        'PATIENT', 'DOCTOR', 'ADMIN', 'SYSTEM',
-        name='actor_type',
-        create_type=True
-    )
-    actor_type.create(op.get_bind(), checkfirst=True)
+    try:
+        conn.execute(sa.text("""
+            CREATE TYPE crypto_audit_log_status AS ENUM ('SUCCESS', 'FAILED', 'DENIED')
+        """))
+    except:
+        pass  # ENUM already exists
+    
+    try:
+        conn.execute(sa.text("""
+            CREATE TYPE actor_type AS ENUM ('PATIENT', 'DOCTOR', 'ADMIN', 'SYSTEM')
+        """))
+    except:
+        pass  # ENUM already exists
     
     # ────────────────────────────────────────────────────────────────
     # Table 1: user_keypairs
@@ -71,7 +74,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('rotated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column('is_revoked', sa.Boolean(), server_default=False, nullable=False),
+        sa.Column('is_revoked', sa.Boolean(), server_default='false', nullable=False),
         sa.Column('revoked_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('revocation_reason', sa.VARCHAR(255), nullable=True),
         sa.PrimaryKeyConstraint('id', name='pk_user_keypairs'),
@@ -98,7 +101,7 @@ def upgrade() -> None:
         sa.Column('encrypted_session_key', sa.Text(), nullable=False),
         sa.Column('nonce', sa.VARCHAR(32), nullable=False),
         sa.Column('auth_tag', sa.VARCHAR(32), nullable=False),
-        sa.Column('status', postgresql.ENUM('ACTIVE', 'ROTATED', 'REVOKED', 'EXPIRED', name='session_key_status'), server_default='ACTIVE', nullable=False),
+        sa.Column('status', postgresql.ENUM('ACTIVE', 'ROTATED', 'REVOKED', 'EXPIRED', name='session_key_status', create_type=False), server_default='ACTIVE', nullable=False),
         sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
@@ -134,7 +137,7 @@ def upgrade() -> None:
         sa.Column('encryption_algorithm', sa.VARCHAR(50), server_default='CHACHA20_POLY1305', nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column('is_deleted', sa.Boolean(), server_default=False, nullable=False),
+        sa.Column('is_deleted', sa.Boolean(), server_default='false', nullable=False),
         sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint('id', name='pk_encrypted_record_vaults'),
         sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ondelete='CASCADE', name='fk_encrypted_vaults_patient_id'),
@@ -158,7 +161,7 @@ def upgrade() -> None:
         'cryptographic_audit_logs',
         sa.Column('id', postgresql.UUID(as_uuid=True), server_default=sa.text('gen_random_uuid()'), nullable=False),
         sa.Column('actor_id', postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column('actor_type', postgresql.ENUM('PATIENT', 'DOCTOR', 'ADMIN', 'SYSTEM', name='actor_type'), nullable=False),
+        sa.Column('actor_type', postgresql.ENUM('PATIENT', 'DOCTOR', 'ADMIN', 'SYSTEM', name='actor_type', create_type=False), nullable=False),
         sa.Column('action', sa.VARCHAR(50), nullable=False),
         sa.Column('resource_type', sa.VARCHAR(50), nullable=False),
         sa.Column('resource_id', postgresql.UUID(as_uuid=True), nullable=False),
@@ -168,7 +171,7 @@ def upgrade() -> None:
         sa.Column('ip_address', sa.VARCHAR(45), nullable=False),
         sa.Column('user_agent', sa.VARCHAR(255), nullable=True),
         sa.Column('request_id', sa.VARCHAR(50), nullable=False),
-        sa.Column('status', postgresql.ENUM('SUCCESS', 'FAILED', 'DENIED', name='crypto_audit_log_status'), server_default='SUCCESS', nullable=False),
+        sa.Column('status', postgresql.ENUM('SUCCESS', 'FAILED', 'DENIED', name='crypto_audit_log_status', create_type=False), server_default='SUCCESS', nullable=False),
         sa.Column('status_message', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='pk_cryptographic_audit_logs'),
@@ -182,7 +185,7 @@ def upgrade() -> None:
     op.create_index('ix_audit_logs_created', 'cryptographic_audit_logs', ['created_at'])
     op.create_index('ix_audit_logs_request_id', 'cryptographic_audit_logs', ['request_id'])
     op.create_index('ix_audit_logs_action_status', 'cryptographic_audit_logs', ['action', 'status'])
-    op.create_index('ix_audit_logs_actor', 'cryptographic_audit_logs', ['actor_id', 'actor_type'])
+    op.create_index('ix_audit_logs_actor_type', 'cryptographic_audit_logs', ['actor_id', 'actor_type'])
     
     # ────────────────────────────────────────────────────────────────
     # Table 5: key_rotation_history
@@ -194,7 +197,7 @@ def upgrade() -> None:
         sa.Column('old_key_fingerprint', sa.VARCHAR(64), nullable=False),
         sa.Column('new_key_fingerprint', sa.VARCHAR(64), nullable=False),
         sa.Column('rotation_reason', sa.VARCHAR(255), nullable=False),
-        sa.Column('status', postgresql.ENUM('PENDING', 'COMPLETED', 'FAILED', name='key_rotation_status'), server_default='PENDING', nullable=False),
+        sa.Column('status', postgresql.ENUM('PENDING', 'COMPLETED', 'FAILED', name='key_rotation_status', create_type=False), server_default='PENDING', nullable=False),
         sa.Column('error_message', sa.Text(), nullable=True),
         sa.Column('rotated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
