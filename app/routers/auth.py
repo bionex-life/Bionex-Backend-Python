@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+import secrets # added for email verification
+from datetime import timedelta
+from app.services.email_service import send_verification_email
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import JWTError
 from slowapi import Limiter
@@ -68,6 +72,9 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
             detail="Phone or email is already registered",
         )
 
+    verify_token = secrets.token_urlsafe(32)
+    token_expiry = datetime.now(timezone.utc) + timedelta(hours=settings.EMAIL_VERIFY_TOKEN_EXPIRE_HOURS)
+
     try:
         user = User(
             name=payload.name,
@@ -75,6 +82,9 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
             email=payload.email,
             hashed_password=hash_password(payload.password),
             role=payload.role,
+            is_email_verified=False,
+            email_verify_token=verify_token,
+            email_verify_token_expires=token_expiry,
         )
         db.add(user)
         db.flush()
@@ -85,6 +95,11 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
 
         db.commit()
         db.refresh(user)
+
+        # Send verification email
+        if payload.email:
+            send_verification_email(payload.email, payload.name, verify_token)
+
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -95,6 +110,34 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
     ip = request.client.host if request.client else None
     log_event(db, "REGISTER", "User", str(user.id), user.id, ip_address=ip)
     return user
+
+
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    """Verify email address when user clicks the link."""
+    
+    # Step 1 — find user with this token
+    user = db.query(User).filter(User.email_verify_token == token).first()
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+
+    # Step 2 — check if token is expired
+    if user.email_verify_token_expires.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Token expired. Please register again.")
+
+    # Step 3 — already verified?
+    if user.is_email_verified:
+        return {"message": "Email already verified. You can log in."}
+
+    # Step 4 — mark as verified and delete token
+    user.is_email_verified = True
+    user.email_verify_token = None
+    user.email_verify_token_expires = None
+    db.commit()
+
+    log_event(db, "EMAIL_VERIFIED", "User", str(user.id), user.id)
+    return {"message": "Email verified successfully! You can now log in."}
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -108,6 +151,12 @@ def login(request: Request, payload: UserLogin, db: Session = Depends(get_db)):
     
     user = db.query(User).filter(User.phone == payload.phone, User.is_active == True).first()
     
+    if user and not user.is_email_verified:
+        raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Please verify your email before logging in.",
+    )
+
     # Check if account is locked (Enhanced Security #1)
     if user and is_account_locked(user):
         raise HTTPException(
