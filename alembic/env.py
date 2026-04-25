@@ -45,6 +45,9 @@ def run_migrations_online() -> None:
         connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"))
         connection.commit()
 
+        connection.execute(text(f"CREATE TABLE IF NOT EXISTS {SCHEMA}.alembic_version (version_num VARCHAR(32) NOT NULL, CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"))
+        connection.commit()
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

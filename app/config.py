@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     # IP Whitelisting for Admin (Enhanced Security #13)
     ADMIN_IP_WHITELIST: str = ""  # Comma-separated, empty = all IPs
 
+    # ── Email Verification (Brevo) ────────────────────────────────────────────
+    BREVO_API_KEY: str = ""
+    BREVO_SENDER_EMAIL: str = ""
+    BREVO_SENDER_NAME: str = "BIONEX"
+    FRONTEND_URL: str = "http://localhost:3000"
+    EMAIL_VERIFY_TOKEN_EXPIRE_HOURS: int = 24
+
     @property
     def allowed_origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]

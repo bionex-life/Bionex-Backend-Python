@@ -104,6 +104,7 @@ class UserOut(BaseModel):
     is_active: bool
     is_locked: bool
     is_2fa_enabled: bool
+    is_email_verified: bool
     created_at: datetime
 
 

@@ -38,6 +38,11 @@ class User(Base, TimestampMixin):
     # ── 2FA Enabled Flag
     is_2fa_enabled = Column(Boolean, default=False, nullable=False)
 
+    # ── Email Verification (Brevo)
+    is_email_verified = Column(Boolean, default=False, nullable=False)
+    email_verify_token = Column(String(255), nullable=True)
+    email_verify_token_expires = Column(DateTime, nullable=True)
+
     # Relationships
     patient = relationship(
         "Patient", back_populates="user", uselist=False, cascade="all, delete-orphan"
