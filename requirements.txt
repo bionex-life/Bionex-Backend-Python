@@ -22,3 +22,6 @@ pytest==9.0.2
 
 #email verification
 sib-api-v3-sdk
+
+# OTP via SMS
+twilio==9.4.4

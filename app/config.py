@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
     EMAIL_VERIFY_TOKEN_EXPIRE_HOURS: int = 24
 
+    # ── OTP (Twilio SMS) ──────────────────────────────────────────────────────
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""   # e.g. +14155552671
+    OTP_EXPIRE_SECONDS: int = 119   # 1 min 59 sec
+
     @property
     def allowed_origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]

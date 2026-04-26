@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import secrets # added for email verification
 from datetime import timedelta
 from app.services.email_service import send_verification_email
+from app.services.otp_service import generate_otp, send_otp_sms, send_otp_email
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import JWTError
@@ -26,6 +27,8 @@ from app.schemas.user import (
     UserCreate,
     UserLogin,
     UserOut,
+    OTPVerifyRequest,
+    OTPSendRequest,
 )
 from app.services.audit_service import log_event
 from app.services.auth_service import (
@@ -75,6 +78,10 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
     verify_token = secrets.token_urlsafe(32)
     token_expiry = datetime.now(timezone.utc) + timedelta(hours=settings.EMAIL_VERIFY_TOKEN_EXPIRE_HOURS)
 
+    # Generate OTP
+    otp = generate_otp()
+    otp_expiry = datetime.now(timezone.utc) + timedelta(seconds=settings.OTP_EXPIRE_SECONDS)
+
     try:
         user = User(
             name=payload.name,
@@ -85,6 +92,9 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
             is_email_verified=False,
             email_verify_token=verify_token,
             email_verify_token_expires=token_expiry,
+            otp_code=otp,
+            otp_expires_at=otp_expiry,
+            otp_verified=False,
         )
         db.add(user)
         db.flush()
@@ -96,9 +106,14 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
         db.commit()
         db.refresh(user)
 
-        # Send verification email
+        # Send verification email 
         if payload.email:
             send_verification_email(payload.email, payload.name, verify_token)
+
+        # Send OTP via SMS + email
+        send_otp_sms(payload.phone, otp)
+        if payload.email:
+            send_otp_email(payload.email, payload.name, otp)
 
     except Exception as e:
         db.rollback()
@@ -185,18 +200,28 @@ def login(request: Request, payload: UserLogin, db: Session = Depends(get_db)):
     
     # Record successful login and reset attempts
     record_successful_login(db, str(user.id), ip_address)
-    
-    access_token = create_access_token({"sub": str(user.id), "role": user.role})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-    
-    log_event(db, "LOGIN", "User", str(user.id), user.id, ip_address=ip_address)
-    
+
+    # Generate and send OTP — JWT issued only after OTP verified via /verify-otp
+    otp = generate_otp()
+    user.otp_code = otp
+    user.otp_expires_at = datetime.now(timezone.utc) + timedelta(seconds=settings.OTP_EXPIRE_SECONDS)
+    user.otp_verified = False
+    db.commit()
+
+    send_otp_sms(user.phone, otp)
+    if user.email:
+        send_otp_email(user.email, user.name, otp)
+
+    log_event(db, "LOGIN_OTP_SENT", "User", str(user.id), user.id, ip_address=ip_address)
+
     return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
+        "access_token": "",
+        "refresh_token": None,
         "token_type": "bearer",
         "role": user.role,
-        "requires_2fa": user.is_2fa_enabled,  # Enhanced Security #2
+        "requires_2fa": user.is_2fa_enabled,
+        "otp_required": True,
+        "message": "OTP sent to your phone and email. Please verify to complete login.",
     }
 
 
@@ -441,6 +466,74 @@ def disable_2fa(
         detail="Invalid TOTP token or backup code",
     )
 
+
+@router.post("/send-otp", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
+def send_otp(request: Request, payload: OTPSendRequest, db: Session = Depends(get_db)):
+    """Resend OTP to user's phone and email. Rate limited to prevent abuse."""
+    user = db.query(User).filter(User.phone == payload.phone, User.is_active == True).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    otp = generate_otp()
+    user.otp_code = otp
+    user.otp_expires_at = datetime.now(timezone.utc) + timedelta(seconds=settings.OTP_EXPIRE_SECONDS)
+    user.otp_verified = False
+    db.commit()
+
+    send_otp_sms(user.phone, otp)
+    if user.email:
+        send_otp_email(user.email, user.name, otp)
+
+    ip = request.client.host if request.client else None
+    log_event(db, "OTP_SENT", "User", str(user.id), user.id, ip_address=ip)
+
+    return {"message": "OTP sent to your phone and email. Valid for 119 seconds."}
+
+
+@router.post("/verify-otp", response_model=TokenResponse)
+@limiter.limit("10/minute")
+def verify_otp(request: Request, payload: OTPVerifyRequest, db: Session = Depends(get_db)):
+    """Verify OTP. On success returns JWT access + refresh tokens."""
+    user = db.query(User).filter(User.phone == payload.phone, User.is_active == True).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not user.otp_code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No OTP requested. Please login or use /send-otp first.")
+
+    # Check expiry
+    if user.otp_expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        user.otp_code = None
+        user.otp_expires_at = None
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="OTP has expired. Please request a new one.")
+
+    # Check code
+    if user.otp_code != payload.otp:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP. Please try again.")
+
+    # OTP valid — mark verified, clear code, issue tokens
+    user.otp_verified = True
+    user.otp_code = None
+    user.otp_expires_at = None
+    db.commit()
+
+    access_token = create_access_token({"sub": str(user.id), "role": user.role})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+
+    ip = request.client.host if request.client else None
+    log_event(db, "OTP_VERIFIED", "User", str(user.id), user.id, ip_address=ip)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "role": user.role,
+        "requires_2fa": user.is_2fa_enabled,
+        "otp_required": False,
+        "message": "OTP verified. Login successful.",
+    }
 
 @router.post("/unlock-account", status_code=status.HTTP_200_OK)
 @limiter.limit("3/minute")
