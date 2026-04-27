@@ -27,9 +27,9 @@ from pydantic import (
 )
 
 
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 # USER KEYPAIR SCHEMAS
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 
 class UserKeypairCreate(BaseModel):
     """Schema for creating a new user keypair"""
@@ -88,9 +88,9 @@ class UserKeypairResponse(BaseModel):
     is_revoked: bool = Field(description="Whether key is revoked")
 
 
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 # SESSION KEY SCHEMAS
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 
 class SessionKeyStatus(str, Enum):
     """Status of session key"""
@@ -185,9 +185,9 @@ class SessionKeyRevoke(BaseModel):
     )
 
 
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 # ENCRYPTED RECORD VAULT SCHEMAS
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 
 class EncryptedRecordVaultCreate(BaseModel):
     """Schema for creating encrypted record vault"""
@@ -265,9 +265,9 @@ class EncryptedRecordVaultResponse(BaseModel):
     is_deleted: bool = Field(description="Whether record is deleted")
 
 
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 # AUDIT LOG SCHEMAS
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 
 class CryptoAuditLogStatus(str, Enum):
     """Status of audit log entry"""
@@ -365,9 +365,9 @@ class CryptographicAuditLogResponse(BaseModel):
     created_at: datetime = Field(description="Creation timestamp")
 
 
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 # QUERY/FILTER SCHEMAS
-# ────────────────────────────────────────────────────────────────
+# ===================================================================
 
 class AuditLogFilter(BaseModel):
     """Filter schema for querying audit logs"""
