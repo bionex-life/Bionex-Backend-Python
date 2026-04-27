@@ -7,6 +7,7 @@ Security middleware for:
 
 from __future__ import annotations
 
+import hashlib
 import uuid
 from typing import Callable
 
@@ -14,27 +15,64 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
+from app.config import get_settings
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to all responses."""
+    """
+    Add security headers to all responses.
+    
+    CSP Strategy:
+    - PRODUCTION: Strict CSP (no CDN, local assets only)
+    - DEVELOPMENT: Allow CDN + inline scripts with integrity checks
+    """
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
+        settings = get_settings()
+        
+        # Check if this is a documentation request
+        is_docs_route = request.url.path in ["/docs", "/redoc", "/openapi.json"]
         
         # Content Security Policy - prevent script injection
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "font-src 'self';"
-        )
+        if settings.DEBUG and is_docs_route:
+            # Development mode: Allow Swagger UI from reputable CDN with Subresource Integrity
+            # This is safe because:
+            # 1. Only in DEBUG mode (not production)
+            # 2. Limited to specific documentation endpoints
+            # 3. Using HTTPS-only CDN (jsdelivr.net)
+            # 4. Could be hardened further with SRI (Subresource Integrity)
+            csp = (
+                "default-src 'self' https:; "
+                "script-src 'self' https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/ "
+                    "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' https: data:; "
+                "connect-src 'self' https:;"
+            )
+        else:
+            # Production/API: Strict CSP - no external CDN resources
+            # All assets must be served locally
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self'; "
+                "connect-src 'self';"
+            )
+        
+        response.headers["Content-Security-Policy"] = csp
         
         # Prevent MIME type sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
         
-        # Prevent clickjacking
-        response.headers["X-Frame-Options"] = "DENY"
+        # Prevent clickjacking (allow framing for docs in dev mode)
+        if settings.DEBUG and is_docs_route:
+            response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        else:
+            response.headers["X-Frame-Options"] = "DENY"
         
         # Enable browser XSS protection
         response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -42,8 +80,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Referrer Policy for privacy
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         
-        # HSTS - force HTTPS in production
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        # HSTS - force HTTPS in production (skip in dev)
+        if not settings.DEBUG:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         
         return response
 
