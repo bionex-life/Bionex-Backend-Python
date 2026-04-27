@@ -25,13 +25,15 @@
 ## Overview
 
 ### Vision
-Medical records are stored **encrypted on patient devices** (not on server). Server acts as:
+Medical records are stored in the primary database, and encrypted copies are stored in the
+server-side `encrypted_record_vaults` table. Server acts as:
 - **Key Authority** - manages doctor session keys
 - **Audit Ledger** - immutable log of access
 - **Permission Manager** - controls who can access what
 
 ### Core Principle
-**Zero-Knowledge Server**: Your backend never holds plaintext patient data. Ever.
+**Encrypted-Data Server**: The backend stores encrypted record copies and enforces access via
+session key hashes; decryption happens on the client.
 
 ### Key Players
 - **Patient**: Owns data, grants access, controls encryption keys
@@ -88,9 +90,8 @@ Server Database
 ```
 Request Flow:
 Doctor App Request
-    ↓
-[Header: X-Sharing-Token: {token}]
-[Header: X-Session-Key: {decrypted_session_key}]
+  ↓
+[Header: X-Session-Key-Hash: {session_key_hash}]
     ↓
 Server Validation
 ├── Is token valid? (not expired, not revoked)

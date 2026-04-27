@@ -136,7 +136,7 @@ File: `app/routers/encryption.py`
 **Audit Log:** `KEYPAIR_GENERATED` event
 
 **Security Notes:**
-- Private key is generated server-side and securely stored in `User_Private_Keypair` table
+- Private key is generated server-side and stored in Vault (no DB storage)
 - Only public key fingerprint returned to client
 - Users can have max 3 active keypairs (for rotation)
 
@@ -164,46 +164,40 @@ File: `app/routers/encryption.py`
 
 #### 1.3 Create Session Key
 
-**Endpoint:** `POST /api/v1/encryption/sessions/create`
+**Endpoint:** `POST /api/v1/encryption/sessions`
 
 **Authentication:** Bearer token (patient must request)
 
 **Request:**
 ```json
 {
-  "doctor_id": "doctor-uuid",
-  "duration_hours": 24,      // Session valid for 24 hours
-  "reason": "Consultation",   // Audit trail reason
-  "record_types": ["PRESCRIPTION", "LAB_REPORT"]  // Optional: restrict types
+  "doctor_id": "doctor-uuid"  // Query parameter
 }
 ```
 
 **Response:**
 ```json
 {
-  "session_id": "session-uuid",
-  "session_key_encrypted": "base64-encrypted-key",
-  "session_key_plaintext": "hex-string",  // ONLY HERE! After this, use hash
-  "session_key_hash": "sha256-hash",
-  "doctor_id": "doctor-uuid",
+  "id": "session-uuid",
   "patient_id": "patient-uuid",
+  "doctor_id": "doctor-uuid",
+  "session_key_hash": "sha256-hash",
+  "status": "ACTIVE",
   "expires_at": "2024-01-02T10:00:00Z",
-  "status": "ACTIVE"
+  "created_at": "2024-01-01T10:00:00Z"
 }
 ```
 
-**Important:** 
-- `session_key_plaintext` is returned ONCE at creation
-- Doctor must immediately derive SHA-256 hash for future requests
-- Plaintext is never returned again; only hash is used in headers
+**Important:**
+- The API response includes the `session_key_hash` only.
+- Doctor access requests use the `X-Session-Key-Hash` header.
 
 **Flow:**
 1. Patient calls this endpoint with doctor_id
 2. System generates 256-bit random key
 3. System encrypts key using doctor's public key (ECDH)
 4. System returns encrypted key + plaintext + hash
-5. Doctor stores hash and discards plaintext
-6. Doctor sends hash in `X-Session-Key-Hash` header for all future record access
+5. Doctor sends `X-Session-Key-Hash` header for all future record access
 
 **Audit Log:** `SESSION_CREATED` event
 

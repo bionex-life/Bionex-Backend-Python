@@ -57,6 +57,7 @@ Indexes:
 - session_key_hash: VARCHAR(64) (SHA-256, unique indexed)
 - encrypted_session_key: Text (encrypted with doctor's public key)
 - nonce, auth_tag: VARCHAR(32) (for AEAD decryption)
+- ephemeral_public_key: Text (sender ephemeral ECDH public key)
 - status: ENUM (ACTIVE, ROTATED, REVOKED, EXPIRED)
 - expires_at: DateTime (auto-invalidation)
 - created_at: DateTime
@@ -77,6 +78,7 @@ Constraints:
 - Immediate revocation support
 - Status tracking (ACTIVE, ROTATED, REVOKED, EXPIRED)
 - AEAD encryption with nonce and auth tag
+- Access validation via `session_key_hash` (used in `X-Session-Key-Hash` header)
 
 #### `EncryptedRecordVault` - Server-Side Encrypted Records
 ```python

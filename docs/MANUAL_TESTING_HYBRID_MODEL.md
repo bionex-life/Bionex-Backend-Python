@@ -21,6 +21,14 @@
 
 ---
 
+## Important Updates (Current API)
+
+- Replace `X-Session-Key` with `X-Session-Key-Hash` in all requests.
+- Replace `/crypto/*` endpoints with `/api/v1/encryption/*`.
+- Replace `/doctor/request-patient-access` with `POST /api/v1/encryption/sessions`.
+
+---
+
 ## Architecture Overview
 
 ### The Hybrid Model (3-Layer Architecture)
@@ -44,6 +52,10 @@
 │ │ ├─ doctor_1_patient_1: {key, TTL: 7d, scope: read}      │    │
 │ │ ├─ doctor_2_patient_1: {key, TTL: 3d, scope: read_write}│    │
 │ │ └─ doctor_3_patient_1: {key, TTL: 30m, scope: read}      │    │
+│ │                                                          │    │
+│ │ Encrypted Record Vault:                                  │    │
+│ │ ├─ Encrypted copies of records (ciphertext + nonce + tag)│    │
+│ │ └─ Metadata (type, date, title)                          │    │
 │ │                                                          │    │
 │ │ Access Permissions Table:                                │    │
 │ │ ├─ doctor_1→patient_1: APPROVED (all records)           │    │
@@ -123,7 +135,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal, engine
 from app.models.user import User, UserRole
 from app.models.patient import Patient, Gender
-from app.security.crypto import CryptoManager
+from app.services.auth_service import hash_password
 from datetime import datetime, timezone, timedelta
 import uuid
 
@@ -135,7 +147,7 @@ patient_user = User(
     name='Test Patient',
     email='testpatient@bionex.com',
     phone='+15551234567',
-    hashed_password=CryptoManager.hash_data(b'password123'),
+  hashed_password=hash_password('password123'),
     role=UserRole.PATIENT,
     is_active=True
 )
@@ -158,7 +170,7 @@ doctor_user = User(
     name='Dr. Test Doctor',
     email='testdoctor@bionex.com',
     phone='+15559876543',
-    hashed_password=CryptoManager.hash_data(b'password123'),
+  hashed_password=hash_password('password123'),
     role=UserRole.DOCTOR,
     is_active=True
 )
@@ -180,7 +192,7 @@ print(f'Doctor created: {doctor_user.id}')
 - Public key stored in database
 - Private key never leaves the application
 
-**API Endpoint**: `POST /crypto/generate-keypair`
+**API Endpoint**: `POST /api/v1/encryption/keypairs/generate`
 
 **Manual Test Steps**:
 
@@ -188,7 +200,7 @@ print(f'Doctor created: {doctor_user.id}')
 
 ```bash
 # Using curl or Postman
-curl -X POST http://localhost:8000/crypto/generate-keypair \
+curl -X POST http://localhost:8000/api/v1/encryption/keypairs/generate \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"user_id": "patient_user_id"}'
@@ -356,18 +368,17 @@ print(f"  Session key: {session_key.hex()}")
 - Stored in database with TTL
 - Encrypted for doctor's public key
 
-**API Endpoint**: `POST /doctor/request-patient-access`
+**API Endpoint**: `POST /api/v1/encryption/sessions`
 
 **Manual Steps**:
 
 #### Step 3.1: Doctor Requests Access
 
 ```bash
-curl -X POST http://localhost:8000/doctor/request-patient-access \
+curl -X POST "http://localhost:8000/api/v1/encryption/sessions?doctor_id=<doctor_id>&ttl_days=7" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <doctor_token>" \
   -d '{
-    "patient_id": "<patient_id>",
     "reason": "Regular checkup and medication review"
   }'
 ```
@@ -375,11 +386,11 @@ curl -X POST http://localhost:8000/doctor/request-patient-access \
 **Expected Response**:
 ```json
 {
-  "sharing_request_id": "uuid-xxxxx",
+  "id": "session-uuid",
   "patient_id": "<patient_id>",
   "doctor_id": "<doctor_id>",
-  "status": "PENDING",
-  "scope": "read",
+  "session_key_hash": "sha256-hash",
+  "status": "ACTIVE",
   "created_at": "2026-04-25T10:35:00Z",
   "expires_at": "2026-05-02T10:35:00Z"
 }

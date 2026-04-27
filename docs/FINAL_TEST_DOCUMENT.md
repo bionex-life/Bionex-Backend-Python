@@ -10,7 +10,7 @@
 - ECDH P-256 key exchange (ephemeral keypairs, forward secrecy)
 - ChaCha20-Poly1305 AEAD encryption (256-bit keys, 96-bit nonces)
 - HKDF key derivation (SHA-256, prevents key reuse)
-- ECDSA digital signatures (Ed25519)
+- ECDSA P-256 digital signatures (SHA-256)
 - Hash verification (SHA-256)
 
 ### Phase 2: Encryption Infrastructure
@@ -44,7 +44,7 @@
 
 ### Phase 6: Audit & Compliance
 - Immutable audit trail (AuditLog with hash chaining)
-- Audit entry signing (HMAC-SHA256)
+- Audit entry signing (ECDSA-SHA256, using server key from Vault)
 - Compliance verification (hash chain validation, signature checks)
 - GDPR/HIPAA export functionality
 - Audit tampering detection (previous_hash → current_hash chain)
@@ -210,7 +210,7 @@ def test_hkdf_key_derivation_deterministic():
 
 ```
 
-### Test 4: Digital Signatures (Ed25519)
+### Test 4: Digital Signatures (ECDSA P-256)
 
 ```python
 def test_ecdsa_signature_verify():
@@ -228,9 +228,9 @@ def test_ecdsa_signature_verify():
     # Sign
     signature = CryptoManager.sign_message(message, private_key)
     
-    # Signature must be deterministic (Ed25519 property)
+    # Signatures must verify against the public key
     signature2 = CryptoManager.sign_message(message, private_key)
-    assert signature == signature2
+    assert signature2 is not None
     
     # Verify signature
     is_valid = CryptoManager.verify_signature(message, signature, public_key)

@@ -101,8 +101,8 @@ def test_cache_operations():
     print("PHASE 1: REDIS CACHE OPERATIONS TEST")
     print("="*80)
     
-    # Use Redis from Docker container (accessible via 'redis' hostname on docker network)
-    cache = CacheManager(redis_url="redis://redis:6379/0")
+    # Use Redis from Docker container (accessible via 'localhost' on host machine)
+    cache = CacheManager(redis_url="redis://localhost:6379/0")
     
     # Test 1: Redis Health Check
     print("\n[✓] Test 2.1: Redis Health Check")
