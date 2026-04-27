@@ -20,7 +20,7 @@ import time
 from typing import Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query, Path
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
@@ -398,7 +398,7 @@ async def list_sessions(
     description="Immediately revoke access for a doctor.",
 )
 async def revoke_session(
-    session_id: str = Query(..., description="UUID of session to revoke"),
+    session_id: str = Path(..., description="UUID of session to revoke"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     request: Request = None,

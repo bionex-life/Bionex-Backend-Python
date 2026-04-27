@@ -93,3 +93,73 @@ def validate_access_token(db: Session, token: str) -> AccessPermission | None:
         db.commit()
         return None
     return perm
+
+
+class SharingService:
+    """Service class for sharing and access control operations."""
+    
+    @staticmethod
+    def create_sharing_request(
+        db: Session,
+        patient_id: str,
+        doctor_id: str,
+        scope: str = "records",
+        expires_in_days: int = 7,
+        reason: str = "",
+    ) -> AccessPermission:
+        """Create a sharing request (wraps create_patient_initiated_permission)."""
+        return create_patient_initiated_permission(
+            db=db,
+            patient_id=uuid.UUID(patient_id),
+            doctor_user_id=uuid.UUID(doctor_id),
+            scope=scope,
+        )
+    
+    @staticmethod
+    def get_patient_sharing_requests(
+        db: Session,
+        patient_id: str,
+    ) -> list[AccessPermission]:
+        """Get all sharing requests for a patient."""
+        return (
+            db.query(AccessPermission)
+            .filter(AccessPermission.patient_id == uuid.UUID(patient_id))
+            .all()
+        )
+    
+    @staticmethod
+    def get_doctor_sharing_requests(
+        db: Session,
+        doctor_user_id: str,
+    ) -> list[AccessPermission]:
+        """Get all sharing requests received by a doctor."""
+        return (
+            db.query(AccessPermission)
+            .filter(AccessPermission.granted_to_user_id == uuid.UUID(doctor_user_id))
+            .all()
+        )
+    
+    @staticmethod
+    def approve_sharing_request(
+        db: Session,
+        request_id: str,
+    ) -> AccessPermission:
+        """Approve a sharing request."""
+        perm = db.query(AccessPermission).filter(AccessPermission.id == uuid.UUID(request_id)).first()
+        if not perm:
+            raise ValueError(f"Sharing request {request_id} not found")
+        return approve_permission(db, perm)
+    
+    @staticmethod
+    def deny_sharing_request(
+        db: Session,
+        request_id: str,
+    ) -> AccessPermission:
+        """Deny a sharing request."""
+        perm = db.query(AccessPermission).filter(AccessPermission.id == uuid.UUID(request_id)).first()
+        if not perm:
+            raise ValueError(f"Sharing request {request_id} not found")
+        perm.request_status = RequestStatus.DENIED
+        db.commit()
+        db.refresh(perm)
+        return perm

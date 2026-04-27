@@ -105,3 +105,7 @@ def get_settings() -> Settings:
     settings = Settings()
     settings.validate_config()
     return settings
+
+
+# Module-level singleton instance
+settings = get_settings()

@@ -17,7 +17,7 @@ from uuid import uuid4
 import base64
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query, Path
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user
@@ -86,7 +86,7 @@ def _validate_session_key(
     description="List encrypted records for a patient (requires valid session key).",
 )
 async def list_patient_records(
-    patient_id: str = Query(..., description="UUID of patient"),
+    patient_id: str = Path(..., description="UUID of patient"),
     record_type: Optional[str] = Query(
         None, description="Filter by type (PRESCRIPTION, LAB_REPORT, etc.)"
     ),

@@ -86,9 +86,6 @@ class UserKeypairResponse(BaseModel):
     key_algorithm: str = Field(description="Key algorithm")
     created_at: datetime = Field(description="Creation timestamp")
     is_revoked: bool = Field(description="Whether key is revoked")
-    
-    class Config:
-        from_attributes = True
 
 
 # ────────────────────────────────────────────────────────────────
@@ -171,9 +168,6 @@ class SessionKeyResponse(BaseModel):
     status: SessionKeyStatus = Field(description="Session key status")
     expires_at: datetime = Field(description="Expiration timestamp")
     created_at: datetime = Field(description="Creation timestamp")
-    
-    class Config:
-        from_attributes = True
 
 
 class SessionKeyRevoke(BaseModel):
@@ -269,9 +263,6 @@ class EncryptedRecordVaultResponse(BaseModel):
     record_title: Optional[str] = Field(description="Record title")
     created_at: datetime = Field(description="Creation timestamp")
     is_deleted: bool = Field(description="Whether record is deleted")
-    
-    class Config:
-        from_attributes = True
 
 
 # ────────────────────────────────────────────────────────────────
@@ -372,9 +363,6 @@ class CryptographicAuditLogResponse(BaseModel):
     resource_type: str = Field(description="Resource type")
     status: CryptoAuditLogStatus = Field(description="Status")
     created_at: datetime = Field(description="Creation timestamp")
-    
-    class Config:
-        from_attributes = True
 
 
 # ────────────────────────────────────────────────────────────────
