@@ -57,11 +57,13 @@ settings = get_settings()
 @limiter.limit("5/minute")
 def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
     """Register a new user. Rate limited to 5/minute."""
-    existing = (
-        db.query(User)
-        .filter((User.phone == payload.phone) | (User.email == payload.email))
-        .first()
-    )
+    from sqlalchemy import or_
+
+    conditions = [User.phone == payload.phone]
+    if payload.email is not None:
+        conditions.append(User.email == payload.email)
+
+    existing = db.query(User).filter(or_(*conditions)).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

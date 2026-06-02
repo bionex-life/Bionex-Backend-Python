@@ -81,6 +81,7 @@ def upload_document(
     storage_path = UPLOADS_DIR / storage_filename
 
     try:
+        UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
         storage_path.write_bytes(content)
     except OSError as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to store uploaded file") from exc

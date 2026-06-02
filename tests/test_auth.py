@@ -7,7 +7,7 @@ def test_register_patient(client):
         json={
             "name": "Priya Sharma",
             "phone": "+919876543210",
-            "password": "securePass1",
+            "password": "SecurePass1!",
             "role": "PATIENT",
         },
     )
@@ -22,7 +22,7 @@ def test_duplicate_registration(client):
     payload = {
         "name": "Priya Sharma",
         "phone": "+919876543210",
-        "password": "securePass1",
+        "password": "SecurePass1!",
         "role": "PATIENT",
     }
     client.post("/api/v1/auth/register", json=payload)
@@ -33,11 +33,11 @@ def test_duplicate_registration(client):
 def test_login_success(client):
     client.post(
         "/api/v1/auth/register",
-        json={"name": "Raj K", "phone": "+912345678901", "password": "mypassword", "role": "PATIENT"},
+        json={"name": "Raj K", "phone": "+912345678901", "password": "SecurePass1!", "role": "PATIENT"},
     )
     resp = client.post(
         "/api/v1/auth/login",
-        json={"phone": "+912345678901", "password": "mypassword"},
+        json={"phone": "+912345678901", "password": "SecurePass1!"},
     )
     assert resp.status_code == 200
     assert "access_token" in resp.json()
@@ -47,11 +47,11 @@ def test_login_success(client):
 def test_login_wrong_password(client):
     client.post(
         "/api/v1/auth/register",
-        json={"name": "Raj K", "phone": "+912345678901", "password": "mypassword", "role": "PATIENT"},
+        json={"name": "Raj K", "phone": "+912345678901", "password": "SecurePass1!", "role": "PATIENT"},
     )
     resp = client.post(
         "/api/v1/auth/login",
-        json={"phone": "+912345678901", "password": "wrongpassword"},
+        json={"phone": "+912345678901", "password": "WrongPassword1!"},
     )
     assert resp.status_code == 401
 
