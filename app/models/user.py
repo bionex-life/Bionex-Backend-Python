@@ -43,6 +43,7 @@ class User(Base, TimestampMixin):
         "Patient", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
     payments = relationship("Payment", back_populates="user")
+    documents = relationship("Document", back_populates="owner")
     received_permissions = relationship(
         "AccessPermission",
         foreign_keys="AccessPermission.granted_to_user_id",

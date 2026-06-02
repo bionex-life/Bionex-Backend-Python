@@ -32,7 +32,8 @@ class Settings(BaseSettings):
 
     # ── Redis ─────────────────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
-
+    # ── File uploads ─────────────────────────────────────────────────────────
+    UPLOADS_DIR: str = "./uploads"
     # ── CORS — comma-separated origins ────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
 
