@@ -11,6 +11,8 @@ from app.models.medication import Medication
 from app.models.patient import Gender, Patient
 from app.models.payment import Payment, PaymentStatus
 from app.models.reminder import Reminder, ReminderFrequency, ReminderLog, ReminderStatus
+from app.models.step_log import StepLog
+from app.models.user_daily_health import UserDailyHealth
 from app.models.user import User, UserRole
 
 __all__ = [
@@ -27,6 +29,8 @@ __all__ = [
     "ReminderLog",
     "ReminderFrequency",
     "ReminderStatus",
+    "StepLog",
+    "UserDailyHealth",
     "LabTest",
     "LabOrder",
     "OrderStatus",
@@ -43,3 +47,4 @@ __all__ = [
     "APIKey",
     "TOTPSecret",
 ]
+

@@ -23,6 +23,7 @@ from app.routers import (
     payments,
     reminders,
     sharing,
+    steps,
 )
 
 settings = get_settings()
@@ -113,6 +114,6 @@ app.include_router(lab_tests.router, prefix=f"{PREFIX}/lab-tests", tags=["lab-te
 app.include_router(lab_orders.router, prefix=f"{PREFIX}/lab-orders", tags=["lab-orders"])
 app.include_router(payments.router, prefix=f"{PREFIX}/payments", tags=["payments"])
 app.include_router(sharing.router, prefix=f"{PREFIX}/sharing", tags=["sharing"])
+app.include_router(steps.router, prefix=f"{PREFIX}/steps", tags=["steps"])
 app.include_router(doctor.router, prefix=f"{PREFIX}/doctor", tags=["doctor"])
 app.include_router(admin.router, prefix=f"{PREFIX}/admin", tags=["admin"])
-
