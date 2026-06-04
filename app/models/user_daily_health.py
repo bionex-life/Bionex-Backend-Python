@@ -17,7 +17,7 @@ class UserDailyHealth(Base, TimestampMixin):
     )
     record_date = Column(Date, primary_key=True, nullable=False)
     health_score = Column(Integer, nullable=True)
-    sleep_quality = Column(Integer, nullable=True)
+    sleep_quality = Column(JSONB, nullable=True)
     step_count = Column(JSONB, nullable=True)
 
     user = relationship("User")
