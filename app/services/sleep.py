@@ -1,7 +1,8 @@
-from datetime import datetime, timezone, date
+import json
+from datetime import datetime, timezone, date, timedelta
 from uuid import UUID
 
-from sqlalchemy import Date as SQLADate, func, case
+from sqlalchemy import Date as SQLADate, func, case, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -205,8 +206,148 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
             )
             db.execute(stmt)
 
+        # Flush to database so that subsequent trend queries see the updated records
+        db.flush()
+
+        # Step 5: Compute sleep score and trend for each affected date
+        for record_date in affected_dates:
+            # Query the updated daily health record to get the current sleep quality data
+            dh_record = (
+                db.query(UserDailyHealth)
+                .filter(
+                    UserDailyHealth.user_id == user_id,
+                    UserDailyHealth.record_date == record_date
+                )
+                .first()
+            )
+            
+            if dh_record and dh_record.sleep_quality and dh_record.sleep_quality.get("total_minutes", 0) > 0:
+                main_minutes = dh_record.sleep_quality.get("main_minutes", 0)
+                nap_minutes = dh_record.sleep_quality.get("nap_minutes", 0)
+                
+                # Compute Sleep Score
+                sleep_score = compute_sleep_score(main_minutes, nap_minutes)
+                
+                # Compute Sleep Trend
+                sleep_trend = compute_sleep_trend(db, user_id, record_date)
+                
+                # Merge sleep_score and sleep_trend into sleep_quality using || operator
+                merge_data = {
+                    "sleep_score": sleep_score,
+                    "sleep_trend": sleep_trend
+                }
+                
+                db.execute(
+                    text(
+                        """
+                        UPDATE user_daily_health
+                        SET sleep_quality = COALESCE(sleep_quality, CAST('{}' AS jsonb)) || CAST(:merge_data AS jsonb),
+                            updated_at = :now_utc
+                        WHERE user_id = :user_id AND record_date = :record_date
+                        """
+                    ),
+                    {
+                        "user_id": user_id,
+                        "record_date": record_date,
+                        "merge_data": json.dumps(merge_data),
+                        "now_utc": datetime.now(timezone.utc)
+                    }
+                )
+
         db.commit()
 
     except Exception as e:
         db.rollback()
         raise e
+
+
+def compute_sleep_score(main_minutes: int, nap_minutes: int) -> int:
+    hours = main_minutes / 60
+
+    if hours < 3:       base = 0
+    elif hours < 4:     base = 25 + (hours - 3) * 20
+    elif hours < 5:     base = 45 + (hours - 4) * 17
+    elif hours < 6:     base = 62 + (hours - 5) * 13
+    elif hours < 6.5:   base = 75 + (hours - 6) * 20
+    elif hours < 7:     base = 85 + (hours - 6.5) * 30
+    elif hours <= 9:    base = 100
+    elif hours <= 10:   base = 95 - (hours - 9) * 10
+    elif hours <= 11:   base = 85 - (hours - 10) * 15
+    else:               base = 70
+
+    if nap_minutes == 0:       nap_adj = 0
+    elif nap_minutes <= 45:    nap_adj = 5
+    elif nap_minutes <= 90:    nap_adj = 0
+    elif nap_minutes <= 120:   nap_adj = -5
+    else:                      nap_adj = -10
+
+    return max(0, min(100, round(base + nap_adj)))
+
+
+def compute_sleep_trend(db: Session, user_id: UUID, record_date: date) -> dict:
+    start_date = record_date - timedelta(days=13)
+    
+    # Query last 14 days from user_daily_health
+    records = (
+        db.query(UserDailyHealth)
+        .filter(
+            UserDailyHealth.user_id == user_id,
+            UserDailyHealth.record_date >= start_date,
+            UserDailyHealth.record_date <= record_date
+        )
+        .all()
+    )
+    
+    # Map from record_date to main_minutes
+    main_minutes_by_date = {}
+    for r in records:
+        if r.sleep_quality and "main_minutes" in r.sleep_quality:
+            main_minutes_by_date[r.record_date] = r.sleep_quality["main_minutes"]
+            
+    # Split into last 7 days and days 8-14
+    current_week_days = [record_date - timedelta(days=i) for i in range(7)]
+    previous_week_days = [record_date - timedelta(days=i) for i in range(7, 14)]
+    
+    current_week_values = [
+        main_minutes_by_date[day]
+        for day in current_week_days
+        if day in main_minutes_by_date and main_minutes_by_date[day] is not None
+    ]
+    
+    previous_week_values = [
+        main_minutes_by_date[day]
+        for day in previous_week_days
+        if day in main_minutes_by_date and main_minutes_by_date[day] is not None
+    ]
+    
+    # Compute averages
+    if current_week_values:
+        current_week_avg = round(sum(current_week_values) / len(current_week_values), 2)
+    else:
+        current_week_avg = None
+        
+    if previous_week_values:
+        previous_week_avg = round(sum(previous_week_values) / len(previous_week_values), 2)
+    else:
+        previous_week_avg = None
+        
+    # Compute delta and direction
+    if current_week_avg is not None and previous_week_avg is not None:
+        delta = round(abs(current_week_avg - previous_week_avg), 2)
+        if current_week_avg > previous_week_avg:
+            direction = "increase"
+        elif current_week_avg < previous_week_avg:
+            direction = "decrease"
+        else:
+            direction = "no_change"
+    else:
+        previous_week_avg = None
+        delta = None
+        direction = "no_change"
+        
+    return {
+        "current_week_avg_minutes": current_week_avg,
+        "previous_week_avg_minutes": previous_week_avg,
+        "delta_minutes": delta,
+        "direction": direction
+    }
