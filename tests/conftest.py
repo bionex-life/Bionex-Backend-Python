@@ -17,6 +17,12 @@ from sqlalchemy.orm import sessionmaker
 from app.database import Base, SCHEMA, get_db
 from app.main import app
 
+# Disable rate limiting for unit tests
+app.state.limiter.enabled = False
+from app.routers.auth import limiter as auth_limiter
+auth_limiter.enabled = False
+
+
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://bionex_user:strong_password@localhost:5432/bionex_test",
