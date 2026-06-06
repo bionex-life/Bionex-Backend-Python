@@ -9,7 +9,11 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.config import get_settings
-from app.middleware.security import CSRFProtectionMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
+from app.middleware.security import (
+    CSRFProtectionMiddleware,
+    RequestIDMiddleware,
+    SecurityHeadersMiddleware,
+)
 from app.routers import (
     admin,
     auth,
@@ -57,6 +61,7 @@ app = FastAPI(
 
 # ── Exception Handlers ────────────────────────────────────────────────────────
 
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
     """Convert Pydantic validation errors to 400 Bad Request instead of 422."""
@@ -69,7 +74,7 @@ async def validation_exception_handler(request, exc: RequestValidationError):
             "msg": error.get("msg", "Validation error"),
         }
         errors.append(error_dict)
-    
+
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": errors},
@@ -91,7 +96,7 @@ app.add_middleware(
     allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allow_headers=["Authorization", "Content-Type", "X-Sharing-Token"],
+    allow_headers=["Authorization", "Content-Type", "X-Sharing-Token", "X-Share-Token"],
 )
 
 # ── Health check ─────────────────────────────────────────────────────────────
@@ -109,11 +114,17 @@ PREFIX = "/api/v1"
 app.include_router(auth.router, prefix=f"{PREFIX}/auth", tags=["auth"])
 app.include_router(patients.router, prefix=f"{PREFIX}/patients", tags=["patients"])
 app.include_router(family.router, prefix=f"{PREFIX}/family", tags=["family"])
-app.include_router(medical_records.router, prefix=f"{PREFIX}/records", tags=["medical-records"])
-app.include_router(medications.router, prefix=f"{PREFIX}/medications", tags=["medications"])
+app.include_router(
+    medical_records.router, prefix=f"{PREFIX}/records", tags=["medical-records"]
+)
+app.include_router(
+    medications.router, prefix=f"{PREFIX}/medications", tags=["medications"]
+)
 app.include_router(reminders.router, prefix=f"{PREFIX}/reminders", tags=["reminders"])
 app.include_router(lab_tests.router, prefix=f"{PREFIX}/lab-tests", tags=["lab-tests"])
-app.include_router(lab_orders.router, prefix=f"{PREFIX}/lab-orders", tags=["lab-orders"])
+app.include_router(
+    lab_orders.router, prefix=f"{PREFIX}/lab-orders", tags=["lab-orders"]
+)
 app.include_router(payments.router, prefix=f"{PREFIX}/payments", tags=["payments"])
 app.include_router(sharing.router, prefix=f"{PREFIX}/sharing", tags=["sharing"])
 app.include_router(steps.router, prefix=f"{PREFIX}/steps", tags=["steps"])

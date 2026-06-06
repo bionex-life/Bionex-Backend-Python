@@ -5,6 +5,7 @@ Revises: 2a5d8e1f3b9c
 Create Date: 2026-06-02 00:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -32,15 +33,35 @@ def upgrade() -> None:
         sa.Column("size_bytes", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(["owner_user_id"], ["bionex.users.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["owner_user_id"], ["bionex.users.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
         schema="bionex",
     )
-    op.create_index(op.f("ix_bionex_documents_id"), "documents", ["id"], unique=False, schema="bionex")
-    op.create_index(op.f("ix_bionex_documents_owner_user_id"), "documents", ["owner_user_id"], unique=False, schema="bionex")
+    op.create_index(
+        op.f("ix_bionex_documents_id"),
+        "documents",
+        ["id"],
+        unique=False,
+        schema="bionex",
+    )
+    op.create_index(
+        op.f("ix_bionex_documents_owner_user_id"),
+        "documents",
+        ["owner_user_id"],
+        unique=False,
+        schema="bionex",
+    )
 
 
 def downgrade() -> None:
-    op.drop_index(op.f("ix_bionex_documents_owner_user_id"), table_name="documents", schema="bionex")
-    op.drop_index(op.f("ix_bionex_documents_id"), table_name="documents", schema="bionex")
+    op.drop_index(
+        op.f("ix_bionex_documents_owner_user_id"),
+        table_name="documents",
+        schema="bionex",
+    )
+    op.drop_index(
+        op.f("ix_bionex_documents_id"), table_name="documents", schema="bionex"
+    )
     op.drop_table("documents", schema="bionex")

@@ -31,7 +31,9 @@ def _get_reminder(reminder_id: UUID, patient: Patient, db: Session) -> Reminder:
         .first()
     )
     if not reminder:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reminder not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Reminder not found"
+        )
     return reminder
 
 
@@ -58,10 +60,14 @@ def create_reminder(
     patient: Patient = Depends(get_patient_profile),
     db: Session = Depends(get_db),
 ):
-    med = db.query(Medication).filter(
-        Medication.id == payload.medication_id,
-        Medication.patient_id == patient.id,
-    ).first()
+    med = (
+        db.query(Medication)
+        .filter(
+            Medication.id == payload.medication_id,
+            Medication.patient_id == patient.id,
+        )
+        .first()
+    )
     if not med:
         raise HTTPException(status_code=400, detail="Medication not found")
 
@@ -100,7 +106,11 @@ def delete_reminder(
     db.commit()
 
 
-@router.post("/{reminder_id}/log", response_model=ReminderLogOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{reminder_id}/log",
+    response_model=ReminderLogOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def log_reminder(
     reminder_id: UUID,
     payload: ReminderLogCreate,

@@ -7,11 +7,8 @@ from __future__ import annotations
 
 import json
 import secrets
-from base64 import b32encode
 
 import pyotp
-
-from app.models.login_attempt import TOTPSecret
 
 
 def generate_totp_secret() -> tuple[str, str]:
@@ -54,12 +51,12 @@ def verify_backup_code(backup_codes_json: str, code: str) -> tuple[bool, str]:
         backup_codes = json.loads(backup_codes_json)
     except (json.JSONDecodeError, TypeError):
         return False, backup_codes_json
-    
+
     code_upper = code.strip().upper()
-    
+
     if code_upper not in backup_codes:
         return False, backup_codes_json
-    
+
     backup_codes.remove(code_upper)
     return True, json.dumps(backup_codes)
 

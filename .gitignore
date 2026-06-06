@@ -159,3 +159,6 @@ redis_data/
 # Temporary files
 *.tmp
 *.temp
+
+# Local uploads
+uploads/

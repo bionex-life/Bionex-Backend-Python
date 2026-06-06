@@ -12,7 +12,11 @@ from app.services.sleep import ingest_sleep_records
 router = APIRouter()
 
 
-@router.post("/{user_id}", response_model=SleepIngestionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{user_id}",
+    response_model=SleepIngestionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def ingest_user_sleep(
     user_id: UUID,
     payload: SleepIngestionRequest,

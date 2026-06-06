@@ -1,10 +1,7 @@
-from datetime import datetime, timezone, timedelta
-import pytest
-from sqlalchemy import func
+from datetime import datetime, timezone
 
 from app.models.step_log import StepLog
 from app.models.user_daily_health import UserDailyHealth
-from app.models.user import User
 
 
 def register_and_login(client, phone, password="securePass1", role="PATIENT"):
@@ -168,7 +165,12 @@ def test_ingest_with_overlaps_and_proration(client, db):
     assert resp.json()["daily_total"] == 1200
 
     # Check StepLogs in database
-    logs = db.query(StepLog).filter(StepLog.user_id == user_id).order_by(StepLog.period_from).all()
+    logs = (
+        db.query(StepLog)
+        .filter(StepLog.user_id == user_id)
+        .order_by(StepLog.period_from)
+        .all()
+    )
     assert len(logs) == 3
     # Check gap log
     assert logs[1].period_from == datetime(2025, 6, 3, 5, 0, tzinfo=timezone.utc)

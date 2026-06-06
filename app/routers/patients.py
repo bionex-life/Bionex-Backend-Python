@@ -37,12 +37,12 @@ def update_my_profile(
 ):
     # Only allow specific fields to be updated (security: prevent injection)
     allowed_fields = {
-        'date_of_birth',
-        'gender',
-        'blood_group',
-        'address',
-        'emergency_contact_name',
-        'emergency_contact_phone'
+        "date_of_birth",
+        "gender",
+        "blood_group",
+        "address",
+        "emergency_contact_name",
+        "emergency_contact_phone",
     }
     for field, value in payload.model_dump(exclude_none=True).items():
         if field in allowed_fields:
@@ -50,5 +50,7 @@ def update_my_profile(
     db.commit()
     db.refresh(patient)
     ip = request.client.host if request.client else None
-    log_event(db, "UPDATE_PROFILE", "Patient", str(patient.id), current_user.id, ip_address=ip)
+    log_event(
+        db, "UPDATE_PROFILE", "Patient", str(patient.id), current_user.id, ip_address=ip
+    )
     return patient

@@ -12,7 +12,11 @@ from app.services.steps import ingest_steps
 router = APIRouter()
 
 
-@router.post("/{user_id}", response_model=StepIngestionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{user_id}",
+    response_model=StepIngestionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def ingest_user_steps(
     user_id: UUID,
     payload: StepLogCreate,

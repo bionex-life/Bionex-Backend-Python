@@ -23,7 +23,9 @@ def _get_medication(med_id: UUID, patient: Patient, db: Session) -> Medication:
         .first()
     )
     if not med:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found"
+        )
     return med
 
 
@@ -53,10 +55,14 @@ def create_medication(
     if payload.family_member_id:
         from app.models.family_member import FamilyMember
 
-        fm = db.query(FamilyMember).filter(
-            FamilyMember.id == payload.family_member_id,
-            FamilyMember.owner_patient_id == patient.id,
-        ).first()
+        fm = (
+            db.query(FamilyMember)
+            .filter(
+                FamilyMember.id == payload.family_member_id,
+                FamilyMember.owner_patient_id == patient.id,
+            )
+            .first()
+        )
         if not fm:
             raise HTTPException(status_code=400, detail="Family member not found")
 
@@ -65,7 +71,14 @@ def create_medication(
     db.commit()
     db.refresh(med)
     ip = request.client.host if request.client else None
-    log_event(db, "CREATE_MEDICATION", "Medication", str(med.id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "CREATE_MEDICATION",
+        "Medication",
+        str(med.id),
+        current_user.id,
+        ip_address=ip,
+    )
     return med
 
 
@@ -89,14 +102,29 @@ def update_medication(
 ):
     med = _get_medication(med_id, patient, db)
     # Only allow specific fields to be updated (security: prevent injection)
-    allowed_fields = {'name', 'dosage', 'frequency', 'start_date', 'end_date', 'is_active', 'notes'}
+    allowed_fields = {
+        "name",
+        "dosage",
+        "frequency",
+        "start_date",
+        "end_date",
+        "is_active",
+        "notes",
+    }
     for field, value in payload.model_dump(exclude_none=True).items():
         if field in allowed_fields:
             setattr(med, field, value)
     db.commit()
     db.refresh(med)
     ip = request.client.host if request.client else None
-    log_event(db, "UPDATE_MEDICATION", "Medication", str(med.id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "UPDATE_MEDICATION",
+        "Medication",
+        str(med.id),
+        current_user.id,
+        ip_address=ip,
+    )
     return med
 
 
@@ -112,4 +140,11 @@ def delete_medication(
     db.delete(med)
     db.commit()
     ip = request.client.host if request.client else None
-    log_event(db, "DELETE_MEDICATION", "Medication", str(med_id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "DELETE_MEDICATION",
+        "Medication",
+        str(med_id),
+        current_user.id,
+        ip_address=ip,
+    )

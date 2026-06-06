@@ -25,7 +25,9 @@ def format_utc_iso(dt: datetime) -> str:
     return dt.isoformat().replace("+00:00", "Z")
 
 
-def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequest) -> None:
+def ingest_sleep_records(
+    db: Session, user_id: UUID, payload: SleepIngestionRequest
+) -> None:
     """Ingest sleep records with overlap resolution, merging, and daily health upsert.
 
     Runs within a single transaction.
@@ -37,11 +39,13 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
         cleaned_batch = []
         for r in sorted_records:
             if not cleaned_batch:
-                cleaned_batch.append({
-                    "period_from": r.period_from,
-                    "period_to": r.period_to,
-                    "sleep_type": r.sleep_type
-                })
+                cleaned_batch.append(
+                    {
+                        "period_from": r.period_from,
+                        "period_to": r.period_to,
+                        "sleep_type": r.sleep_type,
+                    }
+                )
             else:
                 prev = cleaned_batch[-1]
                 if r.period_from <= prev["period_to"]:
@@ -53,11 +57,13 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                     else:
                         prev["sleep_type"] = "nap"
                 else:
-                    cleaned_batch.append({
-                        "period_from": r.period_from,
-                        "period_to": r.period_to,
-                        "sleep_type": r.sleep_type
-                    })
+                    cleaned_batch.append(
+                        {
+                            "period_from": r.period_from,
+                            "period_to": r.period_to,
+                            "sleep_type": r.sleep_type,
+                        }
+                    )
 
         # Track all affected dates to recompute daily summaries
         affected_dates = set()
@@ -83,12 +89,14 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
 
             if not overlapping_logs:
                 # No overlaps -> INSERT as-is
-                db.add(SleepLog(
-                    user_id=user_id,
-                    period_from=new_from,
-                    period_to=new_to,
-                    sleep_type=new_type
-                ))
+                db.add(
+                    SleepLog(
+                        user_id=user_id,
+                        period_from=new_from,
+                        period_to=new_to,
+                        sleep_type=new_type,
+                    )
+                )
             else:
                 surviving_fragments = []
                 for log in overlapping_logs:
@@ -100,7 +108,7 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                             user_id=user_id,
                             period_from=log.period_from,
                             period_to=new_from,
-                            sleep_type=log.sleep_type
+                            sleep_type=log.sleep_type,
                         )
                         surviving_fragments.append(left_frag)
                         affected_dates.add(get_utc_date(log.period_from))
@@ -111,7 +119,7 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                             user_id=user_id,
                             period_from=new_to,
                             period_to=log.period_to,
-                            sleep_type=log.sleep_type
+                            sleep_type=log.sleep_type,
                         )
                         surviving_fragments.append(right_frag)
                         affected_dates.add(get_utc_date(new_to))
@@ -124,12 +132,14 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                 for frag in surviving_fragments:
                     db.add(frag)
 
-                db.add(SleepLog(
-                    user_id=user_id,
-                    period_from=new_from,
-                    period_to=new_to,
-                    sleep_type=new_type
-                ))
+                db.add(
+                    SleepLog(
+                        user_id=user_id,
+                        period_from=new_from,
+                        period_to=new_to,
+                        sleep_type=new_type,
+                    )
+                )
 
             # Flush to database so that subsequent iterations query the updated state
             db.flush()
@@ -139,23 +149,40 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
             # Recompute total sleep duration and nap duration for the date
             summary = (
                 db.query(
-                    func.sum(func.extract("epoch", SleepLog.period_to - SleepLog.period_from) / 60).label("total_minutes"),
+                    func.sum(
+                        func.extract("epoch", SleepLog.period_to - SleepLog.period_from)
+                        / 60
+                    ).label("total_minutes"),
                     func.sum(
                         case(
-                            (SleepLog.sleep_type == "nap", func.extract("epoch", SleepLog.period_to - SleepLog.period_from) / 60),
-                            else_=0
+                            (
+                                SleepLog.sleep_type == "nap",
+                                func.extract(
+                                    "epoch", SleepLog.period_to - SleepLog.period_from
+                                )
+                                / 60,
+                            ),
+                            else_=0,
                         )
-                    ).label("nap_minutes")
+                    ).label("nap_minutes"),
                 )
                 .filter(
                     SleepLog.user_id == user_id,
-                    func.cast(SleepLog.period_from, SQLADate) == record_date
+                    func.cast(SleepLog.period_from, SQLADate) == record_date,
                 )
                 .first()
             )
 
-            total_minutes = int(round(summary.total_minutes)) if (summary and summary.total_minutes is not None) else 0
-            nap_minutes = int(round(summary.nap_minutes)) if (summary and summary.nap_minutes is not None) else 0
+            total_minutes = (
+                int(round(summary.total_minutes))
+                if (summary and summary.total_minutes is not None)
+                else 0
+            )
+            nap_minutes = (
+                int(round(summary.nap_minutes))
+                if (summary and summary.nap_minutes is not None)
+                else 0
+            )
             main_minutes = max(0, total_minutes - nap_minutes)
 
             if total_minutes > 0:
@@ -164,7 +191,7 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                     db.query(SleepLog)
                     .filter(
                         SleepLog.user_id == user_id,
-                        func.cast(SleepLog.period_from, SQLADate) == record_date
+                        func.cast(SleepLog.period_from, SQLADate) == record_date,
                     )
                     .all()
                 )
@@ -183,7 +210,9 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                     "nap_minutes": nap_minutes,
                     "from": format_utc_iso(min_from),
                     "to": format_utc_iso(max_to),
-                    "last_updated": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                    "last_updated": datetime.now(timezone.utc)
+                    .isoformat()
+                    .replace("+00:00", "Z"),
                 }
             else:
                 sleep_quality = None
@@ -216,27 +245,28 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                 db.query(UserDailyHealth)
                 .filter(
                     UserDailyHealth.user_id == user_id,
-                    UserDailyHealth.record_date == record_date
+                    UserDailyHealth.record_date == record_date,
                 )
                 .first()
             )
-            
-            if dh_record and dh_record.sleep_quality and dh_record.sleep_quality.get("total_minutes", 0) > 0:
+
+            if (
+                dh_record
+                and dh_record.sleep_quality
+                and dh_record.sleep_quality.get("total_minutes", 0) > 0
+            ):
                 main_minutes = dh_record.sleep_quality.get("main_minutes", 0)
                 nap_minutes = dh_record.sleep_quality.get("nap_minutes", 0)
-                
+
                 # Compute Sleep Score
                 sleep_score = compute_sleep_score(main_minutes, nap_minutes)
-                
+
                 # Compute Sleep Trend
                 sleep_trend = compute_sleep_trend(db, user_id, record_date)
-                
+
                 # Merge sleep_score and sleep_trend into sleep_quality using || operator
-                merge_data = {
-                    "sleep_score": sleep_score,
-                    "sleep_trend": sleep_trend
-                }
-                
+                merge_data = {"sleep_score": sleep_score, "sleep_trend": sleep_trend}
+
                 db.execute(
                     text(
                         """
@@ -250,8 +280,8 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
                         "user_id": user_id,
                         "record_date": record_date,
                         "merge_data": json.dumps(merge_data),
-                        "now_utc": datetime.now(timezone.utc)
-                    }
+                        "now_utc": datetime.now(timezone.utc),
+                    },
                 )
 
         db.commit()
@@ -264,73 +294,90 @@ def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequ
 def compute_sleep_score(main_minutes: int, nap_minutes: int) -> int:
     hours = main_minutes / 60
 
-    if hours < 3:       base = 0
-    elif hours < 4:     base = 25 + (hours - 3) * 20
-    elif hours < 5:     base = 45 + (hours - 4) * 17
-    elif hours < 6:     base = 62 + (hours - 5) * 13
-    elif hours < 6.5:   base = 75 + (hours - 6) * 20
-    elif hours < 7:     base = 85 + (hours - 6.5) * 30
-    elif hours <= 9:    base = 100
-    elif hours <= 10:   base = 95 - (hours - 9) * 10
-    elif hours <= 11:   base = 85 - (hours - 10) * 15
-    else:               base = 70
+    if hours < 3:
+        base = 0
+    elif hours < 4:
+        base = 25 + (hours - 3) * 20
+    elif hours < 5:
+        base = 45 + (hours - 4) * 17
+    elif hours < 6:
+        base = 62 + (hours - 5) * 13
+    elif hours < 6.5:
+        base = 75 + (hours - 6) * 20
+    elif hours < 7:
+        base = 85 + (hours - 6.5) * 30
+    elif hours <= 9:
+        base = 100
+    elif hours <= 10:
+        base = 95 - (hours - 9) * 10
+    elif hours <= 11:
+        base = 85 - (hours - 10) * 15
+    else:
+        base = 70
 
-    if nap_minutes == 0:       nap_adj = 0
-    elif nap_minutes <= 45:    nap_adj = 5
-    elif nap_minutes <= 90:    nap_adj = 0
-    elif nap_minutes <= 120:   nap_adj = -5
-    else:                      nap_adj = -10
+    if nap_minutes == 0:
+        nap_adj = 0
+    elif nap_minutes <= 45:
+        nap_adj = 5
+    elif nap_minutes <= 90:
+        nap_adj = 0
+    elif nap_minutes <= 120:
+        nap_adj = -5
+    else:
+        nap_adj = -10
 
     return max(0, min(100, round(base + nap_adj)))
 
 
 def compute_sleep_trend(db: Session, user_id: UUID, record_date: date) -> dict:
     start_date = record_date - timedelta(days=13)
-    
+
     # Query last 14 days from user_daily_health
     records = (
         db.query(UserDailyHealth)
         .filter(
             UserDailyHealth.user_id == user_id,
             UserDailyHealth.record_date >= start_date,
-            UserDailyHealth.record_date <= record_date
+            UserDailyHealth.record_date <= record_date,
         )
         .all()
     )
-    
+
     # Map from record_date to main_minutes
     main_minutes_by_date = {}
     for r in records:
         if r.sleep_quality and "main_minutes" in r.sleep_quality:
             main_minutes_by_date[r.record_date] = r.sleep_quality["main_minutes"]
-            
+
     # Split into last 7 days and days 8-14
     current_week_days = [record_date - timedelta(days=i) for i in range(7)]
     previous_week_days = [record_date - timedelta(days=i) for i in range(7, 14)]
-    
+
     current_week_values = [
         main_minutes_by_date[day]
         for day in current_week_days
         if day in main_minutes_by_date and main_minutes_by_date[day] is not None
     ]
-    
+
     previous_week_values = [
         main_minutes_by_date[day]
         for day in previous_week_days
         if day in main_minutes_by_date and main_minutes_by_date[day] is not None
     ]
-    
+
     # Compute averages
     if current_week_values:
         current_week_avg = round(sum(current_week_values) / len(current_week_values), 2)
     else:
         current_week_avg = None
-        
+
     if previous_week_values:
-        previous_week_avg = round(sum(previous_week_values) / len(previous_week_values), 2)
+        previous_week_avg = round(
+            sum(previous_week_values) / len(previous_week_values), 2
+        )
     else:
         previous_week_avg = None
-        
+
     # Compute delta and direction
     if current_week_avg is not None and previous_week_avg is not None:
         delta = round(abs(current_week_avg - previous_week_avg), 2)
@@ -344,10 +391,10 @@ def compute_sleep_trend(db: Session, user_id: UUID, record_date: date) -> dict:
         previous_week_avg = None
         delta = None
         direction = "no_change"
-        
+
     return {
         "current_week_avg_minutes": current_week_avg,
         "previous_week_avg_minutes": previous_week_avg,
         "delta_minutes": delta,
-        "direction": direction
+        "direction": direction,
     }

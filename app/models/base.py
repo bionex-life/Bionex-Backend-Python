@@ -1,6 +1,7 @@
 """
 Shared mixins and custom SQLAlchemy column types used across all models.
 """
+
 from __future__ import annotations
 
 import os
@@ -27,7 +28,7 @@ class EncryptedString(TypeDecorator):
         if not key:
             raise ValueError(
                 "FIELD_ENCRYPTION_KEY is required for field-level encryption of sensitive data (PII). "
-                "Generate with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+                'Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
             )
         return Fernet(key.encode())
 

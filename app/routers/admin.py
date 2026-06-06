@@ -5,6 +5,7 @@ Privacy rules enforced here:
   - Admin CAN see: user names, emails, phones, orders, payments, lab test catalogue
   - Admin CANNOT see: medical records, report URLs, health data, encrypted PHI fields
 """
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -15,11 +16,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import require_admin
 from app.models.lab_order import LabOrder, OrderStatus
-from app.models.lab_test import LabTest
 from app.models.payment import Payment
 from app.models.user import User
 from app.schemas.lab_order import LabOrderOut, LabOrderStatusUpdate
-from app.schemas.lab_test import LabTestOut
 from app.schemas.payment import PaymentOut
 from app.schemas.user import UserOut
 
@@ -64,7 +63,9 @@ def update_order_status(
     """Admin updates order status (e.g., SAMPLE_COLLECTED → COMPLETED)."""
     order = db.query(LabOrder).filter(LabOrder.id == order_id).first()
     if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+        )
 
     order.status = payload.status
     if payload.report_url:

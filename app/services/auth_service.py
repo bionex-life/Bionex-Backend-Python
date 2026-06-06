@@ -3,7 +3,7 @@ from __future__ import annotations
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from jose import JWTError, jwt
+from jose import jwt
 from passlib.context import CryptContext
 
 from app.config import get_settings
@@ -48,6 +48,7 @@ def decode_token(token: str) -> dict:
 # API Key Management (Enhanced Security #4)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def generate_api_key() -> str:
     """Generate a new secure API key."""
     return f"bx_{secrets.token_urlsafe(32)}"
@@ -61,4 +62,3 @@ def hash_api_key(api_key: str) -> str:
 def verify_api_key(api_key: str, hashed_key: str) -> bool:
     """Verify an API key against its hash."""
     return pwd_context.verify(api_key, hashed_key)
-

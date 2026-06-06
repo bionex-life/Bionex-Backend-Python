@@ -28,7 +28,16 @@ def get_current_user(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+    try:
+        import uuid
+
+        uid = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID format",
+        )
+    user = db.query(User).filter(User.id == uid, User.is_active).first()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,19 +48,25 @@ def get_current_user(
 
 def require_patient(user: User = Depends(get_current_user)) -> User:
     if user.role != UserRole.PATIENT:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Patient access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Patient access required"
+        )
     return user
 
 
 def require_doctor(user: User = Depends(get_current_user)) -> User:
     if user.role != UserRole.DOCTOR:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Doctor access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Doctor access required"
+        )
     return user
 
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
+        )
     return user
 
 
@@ -64,7 +79,9 @@ def get_patient_profile(
 
     patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
     if patient is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient profile not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Patient profile not found"
+        )
     return patient
 
 

@@ -14,6 +14,7 @@ Query:
   GET  /sharing/sessions          → patient: list active/approved sessions
   GET  /sharing/requests          → patient: list incoming PENDING requests
 """
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -44,7 +45,9 @@ router = APIRouter()
 # ── Patient-initiated ────────────────────────────────────────────────────────
 
 
-@router.post("/initiate", response_model=AccessPermissionOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/initiate", response_model=AccessPermissionOut, status_code=status.HTTP_201_CREATED
+)
 def initiate_sharing(
     payload: SharingInitiate,
     request: Request,
@@ -53,13 +56,13 @@ def initiate_sharing(
     db: Session = Depends(get_db),
 ):
     """Patient taps / shares with a specific doctor — token issued immediately."""
-    doctor = db.query(User).filter(
-        User.id == payload.doctor_user_id, User.is_active == True
-    ).first()
+    doctor = (
+        db.query(User).filter(User.id == payload.doctor_user_id, User.is_active).first()
+    )
     if not doctor or doctor.role != UserRole.DOCTOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only active doctors can be granted access"
+            detail="Only active doctors can be granted access",
         )
 
     perm = create_patient_initiated_permission(
@@ -70,7 +73,14 @@ def initiate_sharing(
         scope=payload.scope,
     )
     ip = request.client.host if request.client else None
-    log_event(db, "SHARING_INITIATED", "AccessPermission", str(perm.id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "SHARING_INITIATED",
+        "AccessPermission",
+        str(perm.id),
+        current_user.id,
+        ip_address=ip,
+    )
     return perm
 
 
@@ -83,10 +93,14 @@ def revoke_sharing(
     db: Session = Depends(get_db),
 ):
     """Patient revokes an active sharing session."""
-    perm = db.query(AccessPermission).filter(
-        AccessPermission.id == perm_id,
-        AccessPermission.patient_id == patient.id,
-    ).first()
+    perm = (
+        db.query(AccessPermission)
+        .filter(
+            AccessPermission.id == perm_id,
+            AccessPermission.patient_id == patient.id,
+        )
+        .first()
+    )
     if not perm:
         raise HTTPException(status_code=404, detail="Permission not found")
     if perm.request_status not in (RequestStatus.APPROVED, RequestStatus.PENDING):
@@ -97,14 +111,23 @@ def revoke_sharing(
     db.commit()
     db.refresh(perm)
     ip = request.client.host if request.client else None
-    log_event(db, "SHARING_REVOKED", "AccessPermission", str(perm_id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "SHARING_REVOKED",
+        "AccessPermission",
+        str(perm_id),
+        current_user.id,
+        ip_address=ip,
+    )
     return perm
 
 
 # ── Doctor-initiated ─────────────────────────────────────────────────────────
 
 
-@router.post("/request", response_model=AccessPermissionOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/request", response_model=AccessPermissionOut, status_code=status.HTTP_201_CREATED
+)
 def doctor_request_access(
     payload: DoctorAccessRequest,
     request: Request,
@@ -112,9 +135,9 @@ def doctor_request_access(
     db: Session = Depends(get_db),
 ):
     """Doctor sends an access request to a patient (from NFC/QR patient_user_id)."""
-    patient = db.query(Patient).filter(
-        Patient.user_id == payload.patient_user_id
-    ).first()
+    patient = (
+        db.query(Patient).filter(Patient.user_id == payload.patient_user_id).first()
+    )
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
@@ -125,7 +148,14 @@ def doctor_request_access(
         scope=payload.scope,
     )
     ip = request.client.host if request.client else None
-    log_event(db, "ACCESS_REQUESTED", "AccessPermission", str(perm.id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "ACCESS_REQUESTED",
+        "AccessPermission",
+        str(perm.id),
+        current_user.id,
+        ip_address=ip,
+    )
     return perm
 
 
@@ -140,17 +170,28 @@ def approve_request(
     patient: Patient = Depends(get_patient_profile),
     db: Session = Depends(get_db),
 ):
-    perm = db.query(AccessPermission).filter(
-        AccessPermission.id == perm_id,
-        AccessPermission.patient_id == patient.id,
-        AccessPermission.request_status == RequestStatus.PENDING,
-    ).first()
+    perm = (
+        db.query(AccessPermission)
+        .filter(
+            AccessPermission.id == perm_id,
+            AccessPermission.patient_id == patient.id,
+            AccessPermission.request_status == RequestStatus.PENDING,
+        )
+        .first()
+    )
     if not perm:
         raise HTTPException(status_code=404, detail="Pending request not found")
 
     perm = approve_permission(db, perm)
     ip = request.client.host if request.client else None
-    log_event(db, "ACCESS_APPROVED", "AccessPermission", str(perm_id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "ACCESS_APPROVED",
+        "AccessPermission",
+        str(perm_id),
+        current_user.id,
+        ip_address=ip,
+    )
     return perm
 
 
@@ -162,11 +203,15 @@ def reject_request(
     patient: Patient = Depends(get_patient_profile),
     db: Session = Depends(get_db),
 ):
-    perm = db.query(AccessPermission).filter(
-        AccessPermission.id == perm_id,
-        AccessPermission.patient_id == patient.id,
-        AccessPermission.request_status == RequestStatus.PENDING,
-    ).first()
+    perm = (
+        db.query(AccessPermission)
+        .filter(
+            AccessPermission.id == perm_id,
+            AccessPermission.patient_id == patient.id,
+            AccessPermission.request_status == RequestStatus.PENDING,
+        )
+        .first()
+    )
     if not perm:
         raise HTTPException(status_code=404, detail="Pending request not found")
 
@@ -174,7 +219,14 @@ def reject_request(
     db.commit()
     db.refresh(perm)
     ip = request.client.host if request.client else None
-    log_event(db, "ACCESS_REJECTED", "AccessPermission", str(perm_id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "ACCESS_REJECTED",
+        "AccessPermission",
+        str(perm_id),
+        current_user.id,
+        ip_address=ip,
+    )
     return perm
 
 
@@ -187,10 +239,14 @@ def list_active_sessions(
     db: Session = Depends(get_db),
 ):
     """Patient: view all currently approved/active sharing sessions."""
-    return db.query(AccessPermission).filter(
-        AccessPermission.patient_id == patient.id,
-        AccessPermission.request_status == RequestStatus.APPROVED,
-    ).all()
+    return (
+        db.query(AccessPermission)
+        .filter(
+            AccessPermission.patient_id == patient.id,
+            AccessPermission.request_status == RequestStatus.APPROVED,
+        )
+        .all()
+    )
 
 
 @router.get("/requests", response_model=list[AccessPermissionOut])
@@ -199,7 +255,11 @@ def list_incoming_requests(
     db: Session = Depends(get_db),
 ):
     """Patient: view all pending doctor access requests."""
-    return db.query(AccessPermission).filter(
-        AccessPermission.patient_id == patient.id,
-        AccessPermission.request_status == RequestStatus.PENDING,
-    ).all()
+    return (
+        db.query(AccessPermission)
+        .filter(
+            AccessPermission.patient_id == patient.id,
+            AccessPermission.request_status == RequestStatus.PENDING,
+        )
+        .all()
+    )

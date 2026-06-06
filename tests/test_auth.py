@@ -33,7 +33,12 @@ def test_duplicate_registration(client):
 def test_login_success(client):
     client.post(
         "/api/v1/auth/register",
-        json={"name": "Raj K", "phone": "+912345678901", "password": "SecurePass1!", "role": "PATIENT"},
+        json={
+            "name": "Raj K",
+            "phone": "+912345678901",
+            "password": "SecurePass1!",
+            "role": "PATIENT",
+        },
     )
     resp = client.post(
         "/api/v1/auth/login",
@@ -47,7 +52,12 @@ def test_login_success(client):
 def test_login_wrong_password(client):
     client.post(
         "/api/v1/auth/register",
-        json={"name": "Raj K", "phone": "+912345678901", "password": "SecurePass1!", "role": "PATIENT"},
+        json={
+            "name": "Raj K",
+            "phone": "+912345678901",
+            "password": "SecurePass1!",
+            "role": "PATIENT",
+        },
     )
     resp = client.post(
         "/api/v1/auth/login",

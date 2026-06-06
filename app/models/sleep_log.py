@@ -26,6 +26,4 @@ class SleepLog(Base):
 
     user = relationship("User")
 
-    __table_args__ = (
-        Index("ix_sleep_logs_user_period", "user_id", "period_from"),
-    )
+    __table_args__ = (Index("ix_sleep_logs_user_period", "user_id", "period_from"),)

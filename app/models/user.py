@@ -1,6 +1,5 @@
 import enum
 import uuid
-from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, Enum as SAEnum, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -26,7 +25,7 @@ class User(Base, TimestampMixin):
     hashed_password = Column(String(255), nullable=False)
     role = Column(SAEnum(UserRole), nullable=False, default=UserRole.PATIENT)
     is_active = Column(Boolean, default=True, nullable=False)
-    
+
     # ── Account Lockout (Phase 2 Security)
     is_locked = Column(Boolean, default=False, nullable=False)
     locked_until = Column(DateTime, nullable=True)
@@ -34,7 +33,7 @@ class User(Base, TimestampMixin):
     last_failed_login = Column(DateTime, nullable=True)
     last_password_change = Column(DateTime, nullable=True)
     password_expires_at = Column(DateTime, nullable=True)  # For password expiry policy
-    
+
     # ── 2FA Enabled Flag
     is_2fa_enabled = Column(Boolean, default=False, nullable=False)
 
