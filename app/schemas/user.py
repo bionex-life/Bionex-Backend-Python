@@ -104,6 +104,7 @@ class UserOut(BaseModel):
     is_active: bool
     is_locked: bool
     is_2fa_enabled: bool
+    is_email_verified: bool
     created_at: datetime
 
 
@@ -112,9 +113,36 @@ class TokenResponse(BaseModel):
     refresh_token: str | None = None
     token_type: str = "bearer"
     role: UserRole
-    requires_2fa: bool = False  # If True, client must verify 2FA before using token
+    requires_2fa: bool = False
+    otp_required: bool = False
+    message: str | None = None
 
 
 class TokenRefresh(BaseModel):
     refresh_token: str
+
+
+class OTPSendRequest(BaseModel):
+    """Request to resend OTP."""
+    phone: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        if not re.match(r"^\+[1-9]\d{6,14}$", v):
+            raise ValueError("Invalid phone number — use E.164 format")
+        return v
+
+
+class OTPVerifyRequest(BaseModel):
+    """Request to verify OTP submitted by user."""
+    phone: str
+    otp: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        if not re.match(r"^\+[1-9]\d{6,14}$", v):
+            raise ValueError("Invalid phone number — use E.164 format")
+        return v
 
