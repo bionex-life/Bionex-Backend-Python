@@ -37,7 +37,11 @@ class Document(Base, TimestampMixin):
 
     # ── Share-integration fields ──────────────────────────────────────────────
     category = Column(
-        SAEnum(DocumentCategory, name="document_category"),
+        SAEnum(
+            DocumentCategory,
+            name="document_category",
+            values_callable=lambda obj: [item.value for item in obj],
+        ),
         nullable=False,
         default=DocumentCategory.OTHER,
         server_default="other",

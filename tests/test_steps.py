@@ -4,7 +4,7 @@ from app.models.step_log import StepLog
 from app.models.user_daily_health import UserDailyHealth
 
 
-def register_and_login(client, phone, password="securePass1", role="PATIENT"):
+def register_and_login(client, phone, password="SecurePass1!", role="PATIENT"):
     # Register
     reg_resp = client.post(
         "/api/v1/auth/register",
