@@ -5,6 +5,7 @@ Revises: f9b39b741c92
 Create Date: 2026-04-14 11:15:00.000000
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -20,14 +21,31 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Add new columns to users table
-    op.add_column("users", sa.Column("is_locked", sa.Boolean(), nullable=False, server_default="false"))
+    op.add_column(
+        "users",
+        sa.Column("is_locked", sa.Boolean(), nullable=False, server_default="false"),
+    )
     op.add_column("users", sa.Column("locked_until", sa.DateTime(), nullable=True))
-    op.add_column("users", sa.Column("failed_login_attempts", sa.Integer(), nullable=False, server_default="0"))
+    op.add_column(
+        "users",
+        sa.Column(
+            "failed_login_attempts", sa.Integer(), nullable=False, server_default="0"
+        ),
+    )
     op.add_column("users", sa.Column("last_failed_login", sa.DateTime(), nullable=True))
-    op.add_column("users", sa.Column("last_password_change", sa.DateTime(), nullable=True))
-    op.add_column("users", sa.Column("password_expires_at", sa.DateTime(), nullable=True))
-    op.add_column("users", sa.Column("is_2fa_enabled", sa.Boolean(), nullable=False, server_default="false"))
-    
+    op.add_column(
+        "users", sa.Column("last_password_change", sa.DateTime(), nullable=True)
+    )
+    op.add_column(
+        "users", sa.Column("password_expires_at", sa.DateTime(), nullable=True)
+    )
+    op.add_column(
+        "users",
+        sa.Column(
+            "is_2fa_enabled", sa.Boolean(), nullable=False, server_default="false"
+        ),
+    )
+
     # Create login_attempts table
     op.create_table(
         "login_attempts",
@@ -43,7 +61,7 @@ def upgrade() -> None:
         sa.Index("ix_login_attempts_phone", "phone"),
         sa.Index("ix_login_attempts_timestamp", "timestamp"),
     )
-    
+
     # Create password_history table
     op.create_table(
         "password_history",
@@ -55,7 +73,7 @@ def upgrade() -> None:
         sa.Index("ix_password_history_user_id", "user_id"),
         sa.Index("ix_password_history_changed_at", "changed_at"),
     )
-    
+
     # Create api_keys table
     op.create_table(
         "api_keys",
@@ -74,12 +92,14 @@ def upgrade() -> None:
         sa.Index("ix_api_keys_key_hash", "key_hash"),
         sa.Index("ix_api_keys_is_active", "is_active"),
     )
-    
+
     # Create totp_secrets table
     op.create_table(
         "totp_secrets",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False, unique=True),
+        sa.Column(
+            "user_id", postgresql.UUID(as_uuid=True), nullable=False, unique=True
+        ),
         sa.Column("secret", sa.String(32), nullable=False),
         sa.Column("backup_codes", sa.String(2000), nullable=False),
         sa.Column("is_verified", sa.Boolean(), nullable=False, server_default="false"),
@@ -96,7 +116,7 @@ def downgrade() -> None:
     op.drop_table("api_keys")
     op.drop_table("password_history")
     op.drop_table("login_attempts")
-    
+
     # Remove columns from users table
     op.drop_column("users", "is_2fa_enabled")
     op.drop_column("users", "password_expires_at")

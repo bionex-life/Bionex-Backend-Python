@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=True, extra="ignore"
+    )
 
     # ── Application ──────────────────────────────────────────────────────────
     APP_NAME: str = "Bionex API"
@@ -34,6 +36,11 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     # ── File uploads ─────────────────────────────────────────────────────────
     UPLOADS_DIR: str = "./uploads"
+    MAX_UPLOAD_SIZE_BYTES: int = 52_428_800  # 50 MB per file
+
+    # ── Share-intent uploads ──────────────────────────────────────────────────
+    SHARE_TOKEN_EXPIRE_MINUTES: int = 5
+    MAX_SHARE_UPLOAD_FILES: int = 5
     # ── CORS — comma-separated origins ────────────────────────────────────────
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
 
@@ -75,12 +82,12 @@ class Settings(BaseSettings):
             raise ValueError(
                 "ERROR: SECRET_KEY must be configured in .env file. "
                 "It must be a strong random string (min 32 characters). "
-                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+                'Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
             )
         if not self.DEBUG and not self.FIELD_ENCRYPTION_KEY:
             raise ValueError(
                 "ERROR: FIELD_ENCRYPTION_KEY must be configured in production. "
-                "Generate with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+                'Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
             )
 
 

@@ -20,7 +20,7 @@ def list_lab_tests(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    q = db.query(LabTest).filter(LabTest.is_active == True)
+    q = db.query(LabTest).filter(LabTest.is_active)
     if category:
         q = q.filter(LabTest.category == category)
     return q.all()
@@ -34,7 +34,9 @@ def get_lab_test(
 ):
     test = db.query(LabTest).filter(LabTest.id == test_id).first()
     if not test:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lab test not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Lab test not found"
+        )
     return test
 
 
@@ -60,7 +62,9 @@ def update_lab_test(
 ):
     test = db.query(LabTest).filter(LabTest.id == test_id).first()
     if not test:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lab test not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Lab test not found"
+        )
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(test, field, value)
     db.commit()
@@ -76,7 +80,9 @@ def delete_lab_test(
 ):
     test = db.query(LabTest).filter(LabTest.id == test_id).first()
     if not test:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lab test not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Lab test not found"
+        )
     # Soft-delete
     test.is_active = False
     db.commit()

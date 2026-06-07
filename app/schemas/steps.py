@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field, model_validator
 
 class StepLogCreate(BaseModel):
     step_count: int = Field(..., ge=0, description="Step count must be 0 or positive")
-    date_time_from: datetime = Field(..., description="Start of the step count interval")
+    date_time_from: datetime = Field(
+        ..., description="Start of the step count interval"
+    )
     date_time_to: datetime = Field(..., description="End of the step count interval")
 
     @model_validator(mode="after")

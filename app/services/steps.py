@@ -69,7 +69,9 @@ def ingest_steps(db: Session, user_id: UUID, payload: StepLogCreate) -> int:
                 gaps.append((curr, payload.date_time_to))
 
             # Prorate steps: density = step_count / total_duration_seconds
-            total_duration = (payload.date_time_to - payload.date_time_from).total_seconds()
+            total_duration = (
+                payload.date_time_to - payload.date_time_from
+            ).total_seconds()
             density = payload.step_count / total_duration if total_duration > 0 else 0
 
             # INSERT only novel sub-intervals with prorated step counts

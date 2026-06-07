@@ -23,7 +23,9 @@ def _get_record(record_id: UUID, patient: Patient, db: Session) -> MedicalRecord
         .first()
     )
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Record not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Record not found"
+        )
     return record
 
 
@@ -51,10 +53,14 @@ def create_record(
     if payload.family_member_id:
         from app.models.family_member import FamilyMember
 
-        fm = db.query(FamilyMember).filter(
-            FamilyMember.id == payload.family_member_id,
-            FamilyMember.owner_patient_id == patient.id,
-        ).first()
+        fm = (
+            db.query(FamilyMember)
+            .filter(
+                FamilyMember.id == payload.family_member_id,
+                FamilyMember.owner_patient_id == patient.id,
+            )
+            .first()
+        )
         if not fm:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -69,7 +75,14 @@ def create_record(
     db.commit()
     db.refresh(record)
     ip = request.client.host if request.client else None
-    log_event(db, "CREATE_RECORD", "MedicalRecord", str(record.id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "CREATE_RECORD",
+        "MedicalRecord",
+        str(record.id),
+        current_user.id,
+        ip_address=ip,
+    )
     return record
 
 
@@ -83,7 +96,14 @@ def get_record(
 ):
     record = _get_record(record_id, patient, db)
     ip = request.client.host if request.client else None
-    log_event(db, "VIEW_RECORD", "MedicalRecord", str(record.id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "VIEW_RECORD",
+        "MedicalRecord",
+        str(record.id),
+        current_user.id,
+        ip_address=ip,
+    )
     return record
 
 
@@ -99,4 +119,11 @@ def delete_record(
     db.delete(record)
     db.commit()
     ip = request.client.host if request.client else None
-    log_event(db, "DELETE_RECORD", "MedicalRecord", str(record_id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "DELETE_RECORD",
+        "MedicalRecord",
+        str(record_id),
+        current_user.id,
+        ip_address=ip,
+    )

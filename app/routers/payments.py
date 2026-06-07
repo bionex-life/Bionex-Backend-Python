@@ -6,8 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_patient_profile, require_patient
-from app.models.patient import Patient
+from app.dependencies import require_patient
 from app.models.payment import Payment
 from app.models.user import User
 from app.schemas.payment import PaymentOut
@@ -34,10 +33,16 @@ def get_payment(
     current_user: User = Depends(require_patient),
     db: Session = Depends(get_db),
 ):
-    payment = db.query(Payment).filter(
-        Payment.id == payment_id,
-        Payment.user_id == current_user.id,
-    ).first()
+    payment = (
+        db.query(Payment)
+        .filter(
+            Payment.id == payment_id,
+            Payment.user_id == current_user.id,
+        )
+        .first()
+    )
     if not payment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found"
+        )
     return payment

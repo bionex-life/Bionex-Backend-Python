@@ -2,6 +2,7 @@
 from app.models.access_permission import AccessPermission, InitiatedBy, RequestStatus
 from app.models.audit_log import AuditLog
 from app.models.doctor_access_log import DoctorAccessLog
+from app.models.document import Document, DocumentCategory
 from app.models.family_member import FamilyMember, Relation
 from app.models.lab_order import CollectionType, LabOrder, OrderStatus
 from app.models.lab_test import LabTest
@@ -11,6 +12,7 @@ from app.models.medication import Medication
 from app.models.patient import Gender, Patient
 from app.models.payment import Payment, PaymentStatus
 from app.models.reminder import Reminder, ReminderFrequency, ReminderLog, ReminderStatus
+from app.models.share_token import ShareToken
 from app.models.step_log import StepLog
 from app.models.sleep_log import SleepLog
 from app.models.user_daily_health import UserDailyHealth
@@ -44,9 +46,11 @@ __all__ = [
     "RequestStatus",
     "AuditLog",
     "DoctorAccessLog",
+    "Document",
+    "DocumentCategory",
+    "ShareToken",
     "LoginAttempt",
     "PasswordHistory",
     "APIKey",
     "TOTPSecret",
 ]
-

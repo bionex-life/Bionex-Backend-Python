@@ -7,12 +7,14 @@ from sqlalchemy.orm import Session
 from app.models.audit_log import AuditLog
 
 
+from typing import Any
+
 def log_event(
     db: Session,
     action: str,
     resource_type: str,
     resource_id: str | None = None,
-    user_id: uuid.UUID | None = None,
+    user_id: Any = None,
     detail: str | None = None,
     ip_address: str | None = None,
     user_agent: str | None = None,

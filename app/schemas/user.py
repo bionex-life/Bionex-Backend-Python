@@ -21,7 +21,9 @@ class UserCreate(BaseModel):
     def validate_phone(cls, v: str) -> str:
         # E.164 format: + followed by 1-15 digits, must have + prefix
         if not re.match(r"^\+[1-9]\d{6,14}$", v):
-            raise ValueError("Invalid phone number — must use E.164 format with + prefix (e.g. +919876543210)")
+            raise ValueError(
+                "Invalid phone number — must use E.164 format with + prefix (e.g. +919876543210)"
+            )
         return v
 
     @field_validator("password")
@@ -36,7 +38,9 @@ class UserCreate(BaseModel):
         if not re.search(r"\d", v):
             raise ValueError("Password must contain at least one digit")
         if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
-            raise ValueError("Password must contain at least one special character (!@#$%^&*...)")
+            raise ValueError(
+                "Password must contain at least one special character (!@#$%^&*...)"
+            )
         return v
 
     @field_validator("email")
@@ -64,6 +68,7 @@ class UserLogin(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     """Request to change password (Phase 2 Security)."""
+
     old_password: str
     new_password: str
 
@@ -85,11 +90,13 @@ class ChangePasswordRequest(BaseModel):
 
 class TwoFASetupRequest(BaseModel):
     """Request to setup 2FA."""
+
     token: str  # TOTP token to verify setup
 
 
 class TwoFAVerifyRequest(BaseModel):
     """Request to verify 2FA during login."""
+
     token: str  # TOTP token or backup code
 
 
@@ -117,4 +124,3 @@ class TokenResponse(BaseModel):
 
 class TokenRefresh(BaseModel):
     refresh_token: str
-

@@ -25,7 +25,9 @@ def _get_order(order_id: UUID, patient: Patient, db: Session) -> LabOrder:
         .first()
     )
     if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+        )
     return order
 
 
@@ -50,19 +52,25 @@ def book_order(
     patient: Patient = Depends(get_patient_profile),
     db: Session = Depends(get_db),
 ):
-    test = db.query(LabTest).filter(
-        LabTest.id == payload.lab_test_id, LabTest.is_active == True
-    ).first()
+    test = (
+        db.query(LabTest)
+        .filter(LabTest.id == payload.lab_test_id, LabTest.is_active)
+        .first()
+    )
     if not test:
         raise HTTPException(status_code=400, detail="Lab test not found or inactive")
 
     if payload.family_member_id:
         from app.models.family_member import FamilyMember
 
-        fm = db.query(FamilyMember).filter(
-            FamilyMember.id == payload.family_member_id,
-            FamilyMember.owner_patient_id == patient.id,
-        ).first()
+        fm = (
+            db.query(FamilyMember)
+            .filter(
+                FamilyMember.id == payload.family_member_id,
+                FamilyMember.owner_patient_id == patient.id,
+            )
+            .first()
+        )
         if not fm:
             raise HTTPException(status_code=400, detail="Family member not found")
 
@@ -82,7 +90,9 @@ def book_order(
     db.refresh(order)
 
     ip = request.client.host if request.client else None
-    log_event(db, "BOOK_LAB_ORDER", "LabOrder", str(order.id), current_user.id, ip_address=ip)
+    log_event(
+        db, "BOOK_LAB_ORDER", "LabOrder", str(order.id), current_user.id, ip_address=ip
+    )
     return order
 
 
@@ -113,5 +123,12 @@ def cancel_order(
     db.commit()
     db.refresh(order)
     ip = request.client.host if request.client else None
-    log_event(db, "CANCEL_LAB_ORDER", "LabOrder", str(order.id), current_user.id, ip_address=ip)
+    log_event(
+        db,
+        "CANCEL_LAB_ORDER",
+        "LabOrder",
+        str(order.id),
+        current_user.id,
+        ip_address=ip,
+    )
     return order
