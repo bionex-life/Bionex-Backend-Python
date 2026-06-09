@@ -19,6 +19,12 @@ if database_url:
 target_metadata = Base.metadata
 
 
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table":
+        return object.schema == SCHEMA
+    return True
+
+
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -27,6 +33,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         include_schemas=True,
+        include_object=include_object,
         version_table_schema=SCHEMA,
     )
     with context.begin_transaction():
@@ -49,6 +56,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             include_schemas=True,
+            include_object=include_object,
             version_table_schema=SCHEMA,
         )
         with context.begin_transaction():
@@ -59,3 +67,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
