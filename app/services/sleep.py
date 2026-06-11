@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timezone, date, timedelta
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import Date as SQLADate, func, case, text
 from sqlalchemy.dialects.postgresql import insert
@@ -11,10 +12,9 @@ from app.models.user_daily_health import UserDailyHealth
 from app.schemas.sleep import SleepIngestionRequest
 
 
-def get_utc_date(dt: datetime) -> date:
-    if dt.tzinfo is not None:
-        dt = dt.astimezone(timezone.utc)
-    return dt.date()
+def get_local_date(dt: datetime, user_tz: str = "UTC") -> date:
+    tz = ZoneInfo(user_tz)
+    return dt.astimezone(tz).date()
 
 
 def format_utc_iso(dt: datetime) -> str:
@@ -25,9 +25,8 @@ def format_utc_iso(dt: datetime) -> str:
     return dt.isoformat().replace("+00:00", "Z")
 
 
-def ingest_sleep_records(
-    db: Session, user_id: UUID, payload: SleepIngestionRequest
-) -> None:
+
+def ingest_sleep_records(db: Session, user_id: UUID, payload: SleepIngestionRequest, user_tz: str = "UTC") -> None:
     """Ingest sleep records with overlap resolution, merging, and daily health upsert.
 
     Runs within a single transaction.
@@ -74,7 +73,7 @@ def ingest_sleep_records(
             new_to = interval["period_to"]
             new_type = interval["sleep_type"]
 
-            affected_dates.add(get_utc_date(new_from))
+            affected_dates.add(get_local_date(new_from, user_tz))
 
             # Query existing overlapping logs in DB
             overlapping_logs = (
@@ -100,7 +99,7 @@ def ingest_sleep_records(
             else:
                 surviving_fragments = []
                 for log in overlapping_logs:
-                    affected_dates.add(get_utc_date(log.period_from))
+                    affected_dates.add(get_local_date(log.period_from, user_tz))
 
                     # Compute left fragment
                     if log.period_from < new_from:
@@ -111,7 +110,7 @@ def ingest_sleep_records(
                             sleep_type=log.sleep_type,
                         )
                         surviving_fragments.append(left_frag)
-                        affected_dates.add(get_utc_date(log.period_from))
+                        affected_dates.add(get_local_date(log.period_from, user_tz))
 
                     # Compute right fragment
                     if log.period_to > new_to:
@@ -122,7 +121,7 @@ def ingest_sleep_records(
                             sleep_type=log.sleep_type,
                         )
                         surviving_fragments.append(right_frag)
-                        affected_dates.add(get_utc_date(new_to))
+                        affected_dates.add(get_local_date(new_to, user_tz))
 
                 # DELETE all overlapping records
                 for log in overlapping_logs:
@@ -168,7 +167,7 @@ def ingest_sleep_records(
                 )
                 .filter(
                     SleepLog.user_id == user_id,
-                    func.cast(SleepLog.period_from, SQLADate) == record_date,
+                    func.cast(func.timezone(user_tz, SleepLog.period_from), SQLADate) == record_date
                 )
                 .first()
             )
@@ -191,7 +190,7 @@ def ingest_sleep_records(
                     db.query(SleepLog)
                     .filter(
                         SleepLog.user_id == user_id,
-                        func.cast(SleepLog.period_from, SQLADate) == record_date,
+                        func.cast(func.timezone(user_tz, SleepLog.period_from), SQLADate) == record_date
                     )
                     .all()
                 )

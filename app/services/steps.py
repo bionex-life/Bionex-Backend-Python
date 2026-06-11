@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import Date, func
 from sqlalchemy.dialects.postgresql import insert
@@ -10,7 +11,7 @@ from app.models.user_daily_health import UserDailyHealth
 from app.schemas.steps import StepLogCreate
 
 
-def ingest_steps(db: Session, user_id: UUID, payload: StepLogCreate) -> int:
+def ingest_steps(db: Session, user_id: UUID, payload: StepLogCreate, user_tz: str = "UTC") -> int:
     """Ingest step counts with overlap detection, proration, and daily health upsert.
 
     Runs within a single transaction.
@@ -90,13 +91,14 @@ def ingest_steps(db: Session, user_id: UUID, payload: StepLogCreate) -> int:
         # Flush to database to include new step_logs in the query sum
         db.flush()
 
-        # 3. Calculate total steps for the date of request (in UTC)
-        date_of_request = payload.date_time_from.date()
+        # 3. Calculate total steps for the date of request (in user's local timezone)
+        tz = ZoneInfo(user_tz)
+        date_of_request = payload.date_time_from.astimezone(tz).date()
         sum_result = (
             db.query(func.sum(StepLog.step_count))
             .filter(
                 StepLog.user_id == user_id,
-                func.cast(StepLog.period_from, Date) == date_of_request,
+                func.cast(func.timezone(user_tz, StepLog.period_from), Date) == date_of_request,
             )
             .scalar()
         )

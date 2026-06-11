@@ -35,11 +35,11 @@ def test_validation_errors(client):
     # 1. Negative step count
     resp = client.post(
         f"/api/v1/steps/{user_id}",
-        json={
+        json=[{
             "step_count": -5,
             "date_time_from": "2025-06-03T04:00:00Z",
             "date_time_to": "2025-06-03T08:00:00Z",
-        },
+        }],
         headers=headers,
     )
     assert resp.status_code == 400
@@ -47,11 +47,11 @@ def test_validation_errors(client):
     # 2. date_time_from >= date_time_to
     resp = client.post(
         f"/api/v1/steps/{user_id}",
-        json={
+        json=[{
             "step_count": 1000,
             "date_time_from": "2025-06-03T08:00:00Z",
             "date_time_to": "2025-06-03T04:00:00Z",
-        },
+        }],
         headers=headers,
     )
     assert resp.status_code == 400
@@ -59,11 +59,11 @@ def test_validation_errors(client):
     # 3. date_time_from == date_time_to
     resp = client.post(
         f"/api/v1/steps/{user_id}",
-        json={
+        json=[{
             "step_count": 1000,
             "date_time_from": "2025-06-03T04:00:00Z",
             "date_time_to": "2025-06-03T04:00:00Z",
-        },
+        }],
         headers=headers,
     )
     assert resp.status_code == 400
@@ -78,11 +78,11 @@ def test_unauthorized_access(client):
     # User 1 tries to ingest steps for User 2
     resp = client.post(
         f"/api/v1/steps/{user_id2}",
-        json={
+        json=[{
             "step_count": 1200,
             "date_time_from": "2025-06-03T04:00:00Z",
             "date_time_to": "2025-06-03T08:00:00Z",
-        },
+        }],
         headers=headers1,
     )
     assert resp.status_code == 403
@@ -94,11 +94,11 @@ def test_ingest_no_overlap(client, db):
 
     resp = client.post(
         f"/api/v1/steps/{user_id}",
-        json={
+        json=[{
             "step_count": 1200,
             "date_time_from": "2025-06-03T04:00:00Z",
             "date_time_to": "2025-06-03T08:00:00Z",
-        },
+        }],
         headers=headers,
     )
     assert resp.status_code == 201
@@ -153,11 +153,11 @@ def test_ingest_with_overlaps_and_proration(client, db):
     # Prorated steps for 2-hour gap = 300 * 2 = 600 steps
     resp = client.post(
         f"/api/v1/steps/{user_id}",
-        json={
+        json=[{
             "step_count": 1200,
             "date_time_from": "2025-06-03T04:00:00Z",
             "date_time_to": "2025-06-03T08:00:00Z",
-        },
+        }],
         headers=headers,
     )
     assert resp.status_code == 201
@@ -206,11 +206,11 @@ def test_ingest_full_overlap(client, db):
     # 2. Ingest completely overlapping range: 05:00 to 07:00
     resp = client.post(
         f"/api/v1/steps/{user_id}",
-        json={
+        json=[{
             "step_count": 500,
             "date_time_from": "2025-06-03T05:00:00Z",
             "date_time_to": "2025-06-03T07:00:00Z",
-        },
+        }],
         headers=headers,
     )
     assert resp.status_code == 201
@@ -233,11 +233,11 @@ def test_admin_can_ingest_for_other(client):
     # Admin ingests steps for patient
     resp = client.post(
         f"/api/v1/steps/{patient_id}",
-        json={
+        json=[{
             "step_count": 800,
             "date_time_from": "2025-06-03T10:00:00Z",
             "date_time_to": "2025-06-03T11:00:00Z",
-        },
+        }],
         headers=admin_headers,
     )
     assert resp.status_code == 201

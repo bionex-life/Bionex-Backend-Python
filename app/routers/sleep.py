@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -20,6 +20,7 @@ router = APIRouter()
 def ingest_user_sleep(
     user_id: UUID,
     payload: SleepIngestionRequest,
+    timezone: str = Query("Asia/Kolkata", description="IANA timezone of the client, e.g. Asia/Kolkata"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -43,5 +44,5 @@ def ingest_user_sleep(
                 detail="User not found",
             )
 
-    ingest_sleep_records(db, user_id, payload)
+    ingest_sleep_records(db, user_id, payload, user_tz=timezone)
     return SleepIngestionResponse()

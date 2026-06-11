@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -19,7 +19,8 @@ router = APIRouter()
 )
 def ingest_user_steps(
     user_id: UUID,
-    payload: StepLogCreate,
+    payload: list[StepLogCreate],
+    timezone: str = Query("Asia/Kolkata", description="IANA timezone of the client, e.g. Asia/Kolkata"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -27,6 +28,8 @@ def ingest_user_steps(
 
     Only the user themselves or an administrator can ingest steps.
     """
+    
+    print(payload)
     # Authorization check
     if current_user.id != user_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
@@ -43,5 +46,7 @@ def ingest_user_steps(
                 detail="User not found",
             )
 
-    daily_total = ingest_steps(db, user_id, payload)
+    daily_total = 0
+    for step_log in payload:
+        daily_total = ingest_steps(db, user_id, step_log, user_tz=timezone)
     return StepIngestionResponse(daily_total=daily_total)

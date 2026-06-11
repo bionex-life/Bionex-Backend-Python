@@ -30,6 +30,7 @@ from app.routers import (
     sharing,
     sleep,
     steps,
+    daily_health,
 )
 
 settings = get_settings()
@@ -130,5 +131,6 @@ app.include_router(sharing.router, prefix=f"{PREFIX}/sharing", tags=["sharing"])
 app.include_router(steps.router, prefix=f"{PREFIX}/steps", tags=["steps"])
 app.include_router(sleep.router, prefix=f"{PREFIX}/sleep", tags=["sleep"])
 app.include_router(documents.router, prefix=f"{PREFIX}/documents", tags=["documents"])
+app.include_router(daily_health.router, prefix=f"{PREFIX}/daily-health", tags=["daily-health"])
 app.include_router(doctor.router, prefix=f"{PREFIX}/doctor", tags=["doctor"])
 app.include_router(admin.router, prefix=f"{PREFIX}/admin", tags=["admin"])
